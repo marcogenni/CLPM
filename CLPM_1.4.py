@@ -157,13 +157,19 @@ def FitOneShot(dataset, Z, optimiser, scheduler=None):
 ### DATA AND PARAMETER INITIALISATION
 
 edgelist = pd.read_csv('input/edgelist.csv')
-changepoints = torch.tensor(pd.read_csv('input/changepoints.csv', header = None).values, dtype = torch.float64, device = device)
+time_max = np.max(edgelist.iloc[:,0])
+changepoints = np.arange(start = 0.0,  stop = np.round(time_max), step = time_max/20)
+changepoints = torch.tensor(changepoints, dtype = torch.float64, device = device) 
+changepoints.reshape(-1,1)
+np.savetxt("input/changepoints.csv", changepoints, delimiter = ',')
+#changepoints = torch.tensor(pd.read_csv('input/changepoints.csv', header = None).values, dtype = torch.float64, device = device)
 n_changepoints = len(changepoints)
 timestamps = torch.tensor(edgelist.iloc[:,0:1].values, dtype = torch.float64, device = device)
-interactions = torch.tensor(edgelist.iloc[:,1:3].values-1, dtype = torch.long, device = device)
+##interactions = torch.tensor(edgelist.iloc[:,1:3].values-1, dtype = torch.long, device = device)
+interactions = torch.tensor(edgelist.iloc[:,1:3].values, dtype = torch.long, device = device)
 n_nodes = torch.max(interactions).item() + 1
 dataset = MDataset(timestamps, interactions, changepoints, transform = True)
-Z = torch.tensor(np.random.normal(size = (n_nodes,2,n_changepoints)), dtype = torch.float64, device = device, requires_grad = True)
+Z = torch.tensor(np.random.normal(size = (n_nodes,2,(n_changepoints+1))), dtype = torch.float64, device = device, requires_grad = True)
 beta = torch.tensor(np.random.normal(size = 1), dtype = torch.float64, device = device, requires_grad = True) # intercept  term
 
 
@@ -175,8 +181,8 @@ beta = torch.tensor(np.random.normal(size = 1), dtype = torch.float64, device = 
 
 
 ### OPTIMISATION
-epochs = 500
-learning_rate = 1e-3
+epochs = 3000
+learning_rate = 2e-4
 optimiser = torch.optim.SGD([beta, Z], lr = learning_rate)
 scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size = epochs // 10, gamma = 0.35)
 loss_function_values = np.zeros(epochs)

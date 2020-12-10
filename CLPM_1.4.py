@@ -184,11 +184,12 @@ beta = torch.tensor(np.random.normal(size = 1), dtype = torch.float64, device = 
 epochs = 3000
 learning_rate = 2e-4
 optimiser = torch.optim.SGD([beta, Z], lr = learning_rate)
-scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size = epochs // 10, gamma = 0.35)
+scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size = epochs // 100, gamma = 0.99)
 loss_function_values = np.zeros(epochs)
 for epoch in range(epochs):
-    loss_function_values[epoch] = FitOneShot(dataset, Z, optimiser).item()
+    loss_function_values[epoch] = FitOneShot(dataset, Z, optimiser, scheduler).item()
     print("Epoch:", epoch, "\t\tLearning rate:", "{:2e}".format(optimiser.param_groups[0]['lr']), "\t\tLoss:", round(loss_function_values[epoch],3))
+    
 
 
 ### EXPORT OUTPUT

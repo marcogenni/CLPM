@@ -15,7 +15,7 @@ import numpy  as np
 n_nodes = 60
 n_clusters = 3
 n_segments = 4
-low_rate = 0.5
+low_rate = 0.75
 high_rate = 5
 Lbd =  low_rate * np.ones(shape = (n_clusters, n_clusters, n_segments))
 Z = np.concatenate((np.repeat(0,n_nodes/3), np.repeat(1,n_nodes/3), np.repeat(2,n_nodes/3)))
@@ -35,7 +35,7 @@ for i in range(n_nodes-1):
         A[j,i,0] = A[i,j,0]
         
 # Second segment: Emerging communities
-Lbd[:,:,1][np.diag_indices_from(Lbd[:,:,1])] = [5,5,5]
+Lbd[:,:,1][np.diag_indices_from(Lbd[:,:,1])] = [6,5,4]
 for i in  range(n_nodes-1):
     for j in range(i+1, n_nodes):       
         Zi = Z[i]
@@ -56,8 +56,8 @@ for i in  range(n_nodes-1):
         
 # Fourth segment: emerging Hub (2) 
 Lbd[0,0,3] =0.0
-Lbd[0,1,3] = 7.5
-Lbd[1,0,3] = 7.5
+Lbd[0,1,3] = 0.01
+Lbd[1,0,3] = 0.01
 Z = np.repeat(1,n_nodes)
 Z[5] = 0           
 for i in  range(n_nodes-1):

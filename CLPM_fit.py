@@ -97,23 +97,6 @@ def clpm_negloglike(dataset, Z):
     first_likelihood_term += deltas**2 * ( 2*torch.sum(Z_sender_new * Z_receiv_new,1) - torch.sum(Z_sender_new * Z_sender_new,1) - torch.sum(Z_receiv_new * Z_receiv_new,1) )
     
     
-    
-    # This evaluates the value of the integral for the rate function, across all pairs of nodes and timeframes
-    # integral = 0
-    # for k in list(range(dataset.n_changepoints)[0:(n_changepoints-1)]):
-    #     Z_cur = Z[:,:,k]
-    #     Z_new = Z[:,:,k+1]
-    #     Sij00 = torch.mm(Z_cur,Z_cur.t())
-    #     Sij01 = torch.mm(Z_cur,Z_new.t())
-    #     Sij10 = torch.mm(Z_new,Z_cur.t())
-    #     Sij11 = torch.mm(Z_new,Z_new.t())
-    #     Sii00 = torch.sum(Z_cur*Z_cur,1).repeat(dataset.n_nodes,1)
-    #     Sii01 = torch.sum(Z_cur*Z_new,1).repeat(dataset.n_nodes,1)
-    #     Sii11 = torch.sum(Z_new*Z_new,1).repeat(dataset.n_nodes,1)
-    #     S_mat = (Sij01 + Sij10 - Sii01 - Sii01.t()) / 3 + (2*Sij00 - Sii00 - Sii00.t()) / 3 + (2*Sij11 - Sii11 - Sii11.t()) / 3
-    #     S_mat = S_mat.exp()
-    #     integral += S_mat.triu(diagonal = 1).sum()
-    
     # Integral of the rate function: exact value - no Jensen
     integral = 0.
     for k in list(range(dataset.n_changepoints)[0:(dataset.n_changepoints-1)]):

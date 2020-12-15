@@ -140,10 +140,10 @@ def FitOneShot(dataset, Z, optimiser, scheduler=None):
 ### DATA AND PARAMETER INITIALISATION
 
 path = "SimulationStudy_A/"
-
+my_step = 1/20
 edgelist = pd.read_csv(path + 'input/edgelist.csv')
 time_max = np.max(edgelist.iloc[:,0])
-changepoints = np.arange(start = 0.0,  stop = np.ceil(time_max), step = time_max/20) 
+changepoints = np.arange(start = 0.0, stop = 1.0 + my_step ,  step = my_step)*(time_max + 0.0001)
 # L'ultimo change point deve essere più alto del più alto interaction time
 changepoints = torch.tensor(changepoints, dtype = torch.float64, device = device) 
 changepoints.reshape(-1,1)
@@ -154,7 +154,7 @@ timestamps = torch.tensor(edgelist.iloc[:,0:1].values, dtype = torch.float64, de
 interactions = torch.tensor(edgelist.iloc[:,1:3].values, dtype = torch.long, device = device)
 n_nodes = torch.max(interactions).item() + 1
 dataset = MDataset(timestamps, interactions, changepoints, transform = True)
-Z = torch.tensor(np.random.normal(size = (n_nodes,2,(n_changepoints+1))), dtype = torch.float64, device = device, requires_grad = True)
+Z = torch.tensor(np.random.normal(size = (n_nodes,2,(n_changepoints))), dtype = torch.float64, device = device, requires_grad = True)
 beta = torch.tensor(np.random.normal(size = 1), dtype = torch.float64, device = device, requires_grad = True) # intercept  term
 
 

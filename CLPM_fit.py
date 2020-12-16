@@ -77,7 +77,7 @@ def projection_model_negloglike(dataset, Z):
     
     return prior - torch.sum(torch.log(first_likelihood_term)) + integral
 
-def clpm_negloglike(dataset, Z):
+def distance_negloglike(dataset, Z, beta):
     # Prior contribution, this roughly corresponds to a gaussian prior on the initial positions and increments - you can think of this as a penalisation term
     prior = 0
     prior += 5 * torch.sum(Z[:,:,0]**2)
@@ -96,8 +96,7 @@ def clpm_negloglike(dataset, Z):
     first_likelihood_term += 2 * deltas * one_minus_deltas * (  torch.sum(Z_sender_cur * Z_receiv_new,1) + torch.sum(Z_sender_new * Z_receiv_cur,1) - torch.sum(Z_sender_cur * Z_sender_new,1) - torch.sum(Z_receiv_cur * Z_receiv_new,1)  )
     first_likelihood_term += deltas**2 * ( 2*torch.sum(Z_sender_new * Z_receiv_new,1) - torch.sum(Z_sender_new * Z_sender_new,1) - torch.sum(Z_receiv_new * Z_receiv_new,1) )
     
-    
-    # Integral of the rate function: exact value - no Jensen
+    # Integral of the rate function
     integral = 0.
     for k in list(range(dataset.n_changepoints)[0:(dataset.n_changepoints-1)]):
         tau_cur = dataset.changepoints[k]
@@ -127,70 +126,63 @@ def clpm_negloglike(dataset, Z):
         integral += S.sum()        
     return prior - beta*len(dataset) - torch.sum(first_likelihood_term) + torch.sqrt(2*torch.tensor([math.pi], dtype=torch.float64))*torch.exp(beta)*integral
 
-def FitOneShot(dataset, Z, optimiser, scheduler=None):
+def FitOneShot(dataset, Z, beta, optimiser, scheduler=None):
     optimiser.zero_grad()
-    loss_function = clpm_negloglike(dataset, Z)
+    loss_function = distance_negloglike(dataset, Z, beta)
     loss_function.backward()
     optimiser.step()
-    if  not scheduler == None:
+    if not scheduler == None:
         scheduler.step()
     return loss_function
 
 
-### DATA AND PARAMETER INITIALISATION
+#### DATA AND PARAMETER INITIALISATION
 
-path = "SimulationStudy_A/"
-my_step = 1/20
-edgelist = pd.read_csv(path + 'input/edgelist.csv')
-time_max = np.max(edgelist.iloc[:,0])
-changepoints = np.arange(start = 0.0, stop = 1.0 + my_step ,  step = my_step)*(time_max + 0.0001)
-# L'ultimo change point deve essere più alto del più alto interaction time
-changepoints = torch.tensor(changepoints, dtype = torch.float64, device = device) 
-changepoints.reshape(-1,1)
-np.savetxt(path + "input/changepoints.csv", changepoints, delimiter = ',')
-#changepoints = torch.tensor(pd.read_csv('input/changepoints.csv', header = None).values, dtype = torch.float64, device = device)
-n_changepoints = len(changepoints)
-timestamps = torch.tensor(edgelist.iloc[:,0:1].values, dtype = torch.float64, device = device)
-interactions = torch.tensor(edgelist.iloc[:,1:3].values, dtype = torch.long, device = device)
-n_nodes = torch.max(interactions).item() + 1
-dataset = MDataset(timestamps, interactions, changepoints, transform = True)
-Z = torch.tensor(np.random.normal(size = (n_nodes,2,(n_changepoints))), dtype = torch.float64, device = device, requires_grad = True)
-beta = torch.tensor(np.random.normal(size = 1), dtype = torch.float64, device = device, requires_grad = True) # intercept  term
-
-
-#### DEBUG
-
-#print("\n\n\n")
-#clpm_negloglike(dataset, Z)
-#print("\n\n\n")
+#path = "SimulationStudy_A/"
+#my_step = 1/20
+#edgelist = pd.read_csv(path + 'input/edgelist.csv')
+#time_max = np.max(edgelist.iloc[:,0])
+#changepoints = np.arange(start = 0.0, stop = 1.0 + my_step ,  step = my_step)*(time_max + 0.0001)
+## L'ultimo change point deve essere più alto del più alto interaction time
+#changepoints = torch.tensor(changepoints, dtype = torch.float64, device = device) 
+#changepoints.reshape(-1,1)
+#np.savetxt(path + "input/changepoints.csv", changepoints, delimiter = ',')
+##changepoints = torch.tensor(pd.read_csv('input/changepoints.csv', header = None).values, dtype = torch.float64, device = device)
+#n_changepoints = len(changepoints)
+#timestamps = torch.tensor(edgelist.iloc[:,0:1].values, dtype = torch.float64, device = device)
+#interactions = torch.tensor(edgelist.iloc[:,1:3].values, dtype = torch.long, device = device)
+#n_nodes = torch.max(interactions).item() + 1
+#dataset = MDataset(timestamps, interactions, changepoints, transform = True)
+#Z = torch.tensor(np.random.normal(size = (n_nodes,2,(n_changepoints))), dtype = torch.float64, device = device, requires_grad = True)
+#beta = torch.tensor(np.random.normal(size = 1), dtype = torch.float64, device = device, requires_grad = True) # intercept  term
 
 
-### OPTIMISATION
-epochs = 3000
-learning_rate = 2e-4
-optimiser = torch.optim.SGD([beta, Z], lr = learning_rate)
-scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size = epochs // 100, gamma = 0.99)
-loss_function_values = np.zeros(epochs)
-for epoch in range(epochs):
-    loss_function_values[epoch] = FitOneShot(dataset, Z, optimiser, scheduler).item()
-    print("Epoch:", epoch, "\t\tLearning rate:", "{:2e}".format(optimiser.param_groups[0]['lr']), "\t\tLoss:", round(loss_function_values[epoch],3))
-    
+
+#### OPTIMISATION
+#epochs = 3000
+#learning_rate = 2e-4
+#optimiser = torch.optim.SGD([beta, Z], lr = learning_rate)
+#scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size = epochs // 100, gamma = 0.99)
+#loss_function_values = np.zeros(epochs)
+#for epoch in range(epochs):
+#    loss_function_values[epoch] = FitOneShot(dataset, Z, beta, optimiser, scheduler).item()
+#    print("Epoch:", epoch, "\t\tLearning rate:", "{:2e}".format(optimiser.param_groups[0]['lr']), "\t\tLoss:", round(loss_function_values[epoch],3))
 
 
-### EXPORT OUTPUT
+#### EXPORT OUTPUT
+#
+#Z_long_format = np.zeros([Z.shape[0]*Z.shape[1]*Z.shape[2], 4])# just writing the contents of this array in a long format so that I can read it with R
+#index = 0
+#for i in range(Z.shape[0]):
+#	for d in range(Z.shape[1]):
+#		for t in range(Z.shape[2]):
+#			Z_long_format[index, 0] = i+1
+#			Z_long_format[index, 1] = d+1
+#			Z_long_format[index, 2] = t+1
+#			Z_long_format[index, 3] = Z[i,d,t]
+#			index += 1
 
-Z_long_format = np.zeros([Z.shape[0]*Z.shape[1]*Z.shape[2], 4])# just writing the contents of this array in a long format so that I can read it with R
-index = 0
-for i in range(Z.shape[0]):
-	for d in range(Z.shape[1]):
-		for t in range(Z.shape[2]):
-			Z_long_format[index, 0] = i+1
-			Z_long_format[index, 1] = d+1
-			Z_long_format[index, 2] = t+1
-			Z_long_format[index, 3] = Z[i,d,t]
-			index += 1
-
-pd.DataFrame(Z_long_format).to_csv(path+'output/positions.csv', index = False, header = False)
-pd.DataFrame(loss_function_values).to_csv(path+'output/loss_function_values.csv', index = False, header = False)
+#pd.DataFrame(Z_long_format).to_csv(path+'output/positions.csv', index = False, header = False)
+#pd.DataFrame(loss_function_values).to_csv(path+'output/loss_function_values.csv', index = False, header = False)
 
 

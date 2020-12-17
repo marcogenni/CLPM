@@ -47,8 +47,8 @@ def projection_model_negloglike(dataset, Z):
     
     # Prior contribution, this roughly corresponds to a gaussian prior on the initial positions and increments - you can think of this as a penalisation term
     prior = 0
-    prior += 5 * torch.sum(Z[:,:,0]**2)
-    prior += 5 * torch.sum((Z[:,:,1:(dataset.n_changepoints)] - Z[:,:,0:(dataset.n_changepoints-1)])**2)
+    prior += 0.* torch.sum(Z[:,:,0]**2)
+    prior += 6. * torch.sum((Z[:,:,1:(dataset.n_changepoints)] - Z[:,:,0:(dataset.n_changepoints-1)])**2)
     
     # This evaluates the poisson logrates at the timestamps when each of the interactions happen
     kappa = (dataset.timestamps // dataset.segment_length).long()
@@ -66,7 +66,7 @@ def projection_model_negloglike(dataset, Z):
     
     # This evaluates the value of the integral for the rate function, across all pairs of nodes and timeframes
     integral = 0
-    for k in list(range(dataset.n_changepoints)[0:(n_changepoints-1)]):
+    for k in list(range(dataset.n_changepoints)[0:(dataset.n_changepoints-1)]):
         Z_cur = Z[:,:,k]
         Z_new = Z[:,:,k+1]
         Sij00 = ( torch.sum(torch.mm(Z_cur,Z_cur.t())) - torch.sum(Z_cur*Z_cur) ) / 6

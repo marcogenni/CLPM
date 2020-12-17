@@ -1,0 +1,76 @@
+Reality Mining network, part of the Koblenz Network Collection
+===========================================================================
+
+This directory contains the TSV and related files of the mit network: This undirected network contains human contact data among 100 students of the Massachusetts Institute of Technology (MIT), collected by the Reality Mining experiment performed in 2004 as part of the Reality Commons project. The data was collected over 9 months using 100 mobile phones. A node represents a person; an edge indicates that the corresponding nodes had physical contact.
+
+
+More information about the network is provided here: 
+http://konect.cc/networks/mit
+
+Files: 
+    meta.mit -- Metadata about the network 
+    out.mit -- The adjacency matrix of the network in whitespace-separated values format, with one edge per line
+      The meaning of the columns in out.mit are: 
+        First column: ID of from node 
+        Second column: ID of to node
+        Third column (if present): weight or multiplicity of edge
+        Fourth column (if present):  timestamp of edges Unix time
+        Third column: edge weight
+        Fourth column: timestamp of the edge
+
+
+Use the following References for citation:
+
+@MISC{konect:2017:mit,
+    title = {Reality Mining network dataset -- {KONECT}},
+    month = oct,
+    year = {2017},
+    url = {http://konect.cc/networks/mit}
+}
+
+@article{konect:eagle06,
+        title = {{Reality} {Mining}: Sensing Complex Social Systems}, 
+        author = {Eagle, Nathan and (Sandy) Pentland, Alex},
+        journal = {Personal Ubiquitous Comput.},
+        volume = {10},
+        number = {4},
+        year = {2006},
+        pages = {255--268},
+}
+
+@article{konect:eagle06,
+        title = {{Reality} {Mining}: Sensing Complex Social Systems}, 
+        author = {Eagle, Nathan and (Sandy) Pentland, Alex},
+        journal = {Personal Ubiquitous Comput.},
+        volume = {10},
+        number = {4},
+        year = {2006},
+        pages = {255--268},
+}
+
+
+@inproceedings{konect,
+	title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
+	author = {Jérôme Kunegis},
+	year = {2013},
+	booktitle = {Proc. Int. Conf. on World Wide Web Companion},
+	pages = {1343--1350},
+	url = {http://dl.acm.org/citation.cfm?id=2488173},
+	url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
+	url_web = {http://konect.cc/},
+	url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
+}
+
+@inproceedings{konect,
+	title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
+	author = {Jérôme Kunegis},
+	year = {2013},
+	booktitle = {Proc. Int. Conf. on World Wide Web Companion},
+	pages = {1343--1350},
+	url = {http://dl.acm.org/citation.cfm?id=2488173},
+	url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
+	url_web = {http://konect.cc/},
+	url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
+}
+
+

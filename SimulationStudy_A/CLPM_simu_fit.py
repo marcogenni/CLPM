@@ -65,4 +65,4 @@ for i in range(Z.shape[0]):
 pd.DataFrame(Z_long_format).to_csv(path+'output/positions.csv', index = False, header = False)
 pd.DataFrame(loss_function_values).to_csv(path+'output/loss_function_values.csv', index = False, header = False)
 
-# plt.plot(loss_function_values)
+#plt.plot(loss_function_values)

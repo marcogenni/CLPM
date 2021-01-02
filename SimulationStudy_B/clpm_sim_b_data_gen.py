@@ -11,7 +11,7 @@ import numpy as np
 
 np.random.seed(12345)
 
-n_nodes = 10
+n_nodes = 8
 space_limit = 1
 beta = 5
 n_changepoints_per_phase = 10

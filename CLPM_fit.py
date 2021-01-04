@@ -9,8 +9,6 @@ import math
 import torch
 from torch.utils.data import Dataset
 
-device = "cpu"
-
 from torch.distributions.normal import  Normal
 RV = Normal(0,1)
 
@@ -18,7 +16,7 @@ RV = Normal(0,1)
 
 # CDataset: I am overwriting the methods __init__, __getitem__ and __len__,
 class MDataset(Dataset):
-    def __init__(self, timestamps, interactions, changepoints, transform=False):
+    def __init__(self, timestamps, interactions, changepoints, transform=False, device = "cpu"):
         self.timestamps = timestamps
         self.interactions = interactions
         self.n_entries = len(timestamps)
@@ -27,13 +25,14 @@ class MDataset(Dataset):
         self.n_changepoints = len(self.changepoints)
         self.segment_length = changepoints[1] - changepoints[0]
         self.transform = transform
+        self.device = device
         
     def __getitem__(self, item):
         interaction = [self.timestamps[item], self.interactions[item,:]]
         if self.transform is not False:
             interaction = torch.Tensor(interaction)
-            if device=="cuda":
-                interaction = interaction.to(device)
+            if self.device=="cuda":
+                interaction = interaction.to(self.device)
         return interaction
     
     def __len__(self):
@@ -75,7 +74,7 @@ def projection_model_negloglike(dataset, Z):
     
     return prior - torch.sum(torch.log(first_likelihood_term)) + integral
 
-def distance_negloglike(dataset, Z, beta):
+def distance_negloglike(dataset, Z, beta, device = "cpu"):
     # Prior contribution, this roughly corresponds to a gaussian prior on the initial positions and increments - you can think of this as a penalisation term
     prior = 0
     prior += 5 * torch.sum(Z[:,:,0]**2)
@@ -106,27 +105,27 @@ def distance_negloglike(dataset, Z, beta):
         tZ1 = tZ2.transpose(0,1)
         D = tZ1 + tZ2 -2*torch.mm(Z_cur, Z_cur.transpose(0,1))  # its element (i,j) is || z_i - z_j ||_2^2
         N = len(D)
-        D_vec = D[torch.triu(torch.ones(N,N),1) == 1]
+        D_vec = D[torch.triu(torch.ones(N,N, device = device),1) == 1]
         DZ = Z_new - Z_cur            # This is \Delta 
         tDZ1 = torch.sum(DZ**2, 1)    
         tDZ2 = tDZ1.expand(tDZ1.shape[0], tDZ1.shape[0])
         tDZ1 = tDZ2.transpose(0,1)
         S = tDZ1 + tDZ2 -2*torch.mm(DZ, DZ.transpose(0,1))   # its element  (i,j) is || \Delta_i - \Delta_j ||_2^2
-        S_vec = S[torch.triu(torch.ones(N,N),1) == 1]
+        S_vec = S[torch.triu(torch.ones(N,N, device = device),1) == 1]
         tA = torch.sum((DZ*Z_cur), 1)
         tB = tA.expand(tA.shape[0], tA.shape[0])
         tA = tB.transpose(0,1)
         C = torch.mm(DZ, Z_cur.transpose(0,1)) +  torch.mm(Z_cur, DZ.transpose(0,1)) - tA - tB
-        C_vec = C[torch.triu(torch.ones(N,N),1) == 1]        
+        C_vec = C[torch.triu(torch.ones(N,N, device = device),1) == 1]        
         mu = (1/S_vec)*(C_vec) 
         sigma = torch.sqrt(1/(2*S_vec))
         S = torch.exp(-(D_vec - S_vec*(mu**2)))*sigma*(RV.cdf((1 - mu)/sigma) - RV.cdf((0 - mu)/sigma))*(tau_new - tau_cur)
         integral += S.sum()        
-    return prior - beta*len(dataset) - torch.sum(first_likelihood_term) + torch.sqrt(2*torch.tensor([math.pi], dtype=torch.float64))*torch.exp(beta)*integral
+    return prior - beta*len(dataset) - torch.sum(first_likelihood_term) + torch.sqrt(2*torch.tensor([math.pi], dtype=torch.float64, device = device))*torch.exp(beta)*integral
 
-def FitOneShot(dataset, Z, beta, optimiser, scheduler=None):
+def FitOneShot(dataset, Z, beta, optimiser, scheduler=None, device = "cpu"):
     optimiser.zero_grad()
-    loss_function = distance_negloglike(dataset, Z, beta)
+    loss_function = distance_negloglike(dataset, Z, beta, device)
     loss_function.backward()
     optimiser.step()
     if not scheduler == None:

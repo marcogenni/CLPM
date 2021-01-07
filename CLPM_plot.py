@@ -45,7 +45,7 @@ def fade_node_sizes(dataset, bending = 1):
     @param      dataset         the observed data
     @param      bending         the values are amplified or reduced according to this positive value: >1 will increase variability, <1 will decrease variability
     """
-    sizes = np.zeros((dataset.n_nodes, dataset.n_changepoints))
+    sizes = np.ones((dataset.n_nodes, dataset.n_changepoints))
     for edge in range(dataset.n_entries):
         i = dataset.interactions[edge,0].item()
         j = dataset.interactions[edge,1].item()

@@ -43,7 +43,7 @@ beta = torch.tensor(np.random.normal(size = 1), dtype = torch.float64, device = 
 
 
 ### OPTIMISATION
-epochs = 200
+epochs = 2000
 learning_rate = 1e-2
 optimiser = torch.optim.SGD([{'params': beta, "lr": 1e-07},
                              {'params': Z},], 
@@ -72,7 +72,7 @@ for i in range(Z.shape[0]):
 pd.DataFrame(Z_long_format).to_csv(path+'output/positions.csv', index = False, header = False)
 pd.DataFrame(loss_function_values).to_csv(path+'output/loss_function_values.csv', index = False, header = False)
 
-#plt.plot(loss_function_values)
+plt.plot(loss_function_values)
 
 ####################
  ## Plot results ##

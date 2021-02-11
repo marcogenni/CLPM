@@ -27,10 +27,17 @@ def fade_node_colors(dataset, Z, bending = 1):
     """
     colors = np.zeros((dataset.n_nodes, dataset.n_changepoints))
     for t in range(dataset.n_changepoints):
-        for i in range(dataset.n_nodes):
-            for j in range(dataset.n_nodes):
-                if i != j:
-                    colors[i,t] += (  1 + (Z[i,0,t]-Z[j,0,t])**2 + (Z[i,1,t]-Z[j,1,t])**2  ) / (dataset.n_nodes-1)
+        print('changepoint: ', t)
+        tDZ1 = torch.sum(Z**2, 1)    
+        tDZ2 = tDZ1.expand(tDZ1.shape[0], tDZ1.shape[0])
+        tDZ1 = tDZ2.transpose(0,1)
+        S = (1.0 + tDZ1 + tDZ2 - 2*torch.mm(Z, DZ.transpose(0,1)))
+        S[range(len(S)), range(len(S))] = torch.zeros(len(S))
+        colors[:,t] = torch.mean(S,1)
+        #for i in range(dataset.n_nodes):
+        #    for j in range(dataset.n_nodes):
+        #        if i != j:
+        #            colors[i,t] += (  1 + (Z[i,0,t]-Z[j,0,t])**2 + (Z[i,1,t]-Z[j,1,t])**2  ) / (dataset.n_nodes-1)
     colors = colors**bending
     colors /= colors.min()
     colors -= 1
@@ -64,7 +71,7 @@ def fade_node_sizes(dataset, bending = 1):
     sizes /= sizes.max()
     return sizes
 
-def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi = 100):
+def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi = 100, times = None):
     """
     Creates a sequence of images that will compose the video.
     @param      Z               the latent positions from the output of the fitting algorithm
@@ -73,6 +80,7 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi = 100
     @param      node_colors     how the nodes should be colored at each changepoint
     @param      node_sizes      the size of the nodes at each changepoint
     @param      dpi             resolution of the exported pdf images
+    @param      times           optional time labels (dates) to plot in the title of each snap
     @return                     a list of strings indicating the path to the images that must be collated in the video
     """
     n_nodes = Z.shape[0]
@@ -88,6 +96,7 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi = 100
     sizes_large = np.zeros((n_nodes, n_frames))
     sizes_large[:,n_frames-1] = node_sizes[:,n_cps-1]
     for frame in range(n_frames-1):
+        print('(1) - frame: ', frame)
         cp0 = frame // (frames_btw+1)
         cp1 = (frame // (frames_btw+1)) + 1
         delta = (frame % (frames_btw+1)) / (frames_btw+1)
@@ -99,8 +108,12 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi = 100
             sizes_large[i,frame] = (1-delta)*node_sizes[i,cp0] + delta*node_sizes[i,cp1]
     pos_limit = np.abs(pos).max()
     for frame in range(n_frames):
+        print('(2) - frame: ', frame)
         plt.figure()
-        plt.title("Latent Positions at time " + str(round(cps_large[frame],2)), loc = "left")
+        if times == None:
+            plt.title("Latent Positions at time " + str(round(cps_large[frame],2)), loc = "left")
+        else:
+            plt.title("Latent Positions at time " + times[frame], loc = "left")
         plt.xlim((-pos_limit,pos_limit))
         plt.ylim((-pos_limit,pos_limit))
         for idi in range(n_nodes):
@@ -146,7 +159,7 @@ def make_video(outvid, images, outimg = None, fps = 2, size = (600,450), is_colo
     vid.release()
     return vid
 
-def clpm_animation(outvid, Z, changepoints, frames_btw, node_colors, node_sizes, dpi, period, size = (1200,900), is_color = True, format = "mp4v"):
+def clpm_animation(outvid, Z, changepoints, frames_btw, node_colors, node_sizes, dpi, period, size = (1200,900), is_color = True, format = "mp4v", times = None):
     """
     Combines the functions create_snaps and make_video to produce the animation for a fitted clpm
     @param      outvid          output video
@@ -160,9 +173,10 @@ def clpm_animation(outvid, Z, changepoints, frames_btw, node_colors, node_sizes,
     @param      size            see make_video
     @param      is_color        see make_video
     @param      format          see make_video
+    @param      times           optional time labels (dates) to plot in the title of each snap
     @return                     see make_video
     """
-    images = create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi)
+    images = create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi, times)
     fps = (frames_btw+1) / period
     return make_video(outvid, images, None, fps, size, is_color, format)
 

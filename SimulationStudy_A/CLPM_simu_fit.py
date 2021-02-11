@@ -43,7 +43,7 @@ beta = torch.tensor(np.random.normal(size = 1), dtype = torch.float64, device = 
 
 
 ### OPTIMISATION
-epochs = 2000
+epochs = 1000
 learning_rate = 1e-2
 optimiser = torch.optim.SGD([{'params': beta, "lr": 1e-07},
                              {'params': Z},], 
@@ -72,7 +72,7 @@ for i in range(Z.shape[0]):
 pd.DataFrame(Z_long_format).to_csv(path+'output/positions.csv', index = False, header = False)
 pd.DataFrame(loss_function_values).to_csv(path+'output/loss_function_values.csv', index = False, header = False)
 
-plt.plot(loss_function_values)
+#plt.plot(loss_function_values)
 
 ####################
  ## Plot results ##
@@ -108,8 +108,17 @@ plt.plot(loss_function_values)
     
 # test = make_video(folder+'results/video.mp4', images = img)
    
+   
 
 ### PLOTS
+
+import matplotlib
+matplotlib.use('pdf')
+import matplotlib.pyplot as plt
+plt.figure()
+plt.plot(loss_function_values)
+plt.savefig('loss.pdf')
+plt.close()
 
 outvid = folder + 'results/video.mp4'
 frames_btw = 20
@@ -124,6 +133,8 @@ formato = 'mp4v'
 clpm_animation(outvid, Z.cpu().detach().numpy(), changepoints.cpu().detach().numpy(), frames_btw, node_colors, node_sizes, dpi, period, size, is_color, formato)
 
 #plt.plot(loss_function_values)
+
+
 
 
 ### EXPORT OUTPUT

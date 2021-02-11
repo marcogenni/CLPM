@@ -77,8 +77,8 @@ def projection_model_negloglike(dataset, Z, device = "cpu"):
 def distance_negloglike(dataset, Z, beta, device = "cpu"):
     # Prior contribution, this roughly corresponds to a gaussian prior on the initial positions and increments - you can think of this as a penalisation term
     prior = 0
-    prior += 10.5 * torch.sum(Z[:,:,0]**2)
-    prior += 10.5 * torch.sum((Z[:,:,1:(dataset.n_changepoints)] - Z[:,:,0:(dataset.n_changepoints-1)])**2)
+    prior += 10.0 * torch.sum(Z[:,:,0]**2)
+    prior += 10.0 * torch.sum((Z[:,:,1:(dataset.n_changepoints)] - Z[:,:,0:(dataset.n_changepoints-1)])**2)
     
     # This evaluates the poisson logrates at the timestamps when each of the interactions happen
     kappa = (dataset.timestamps // dataset.segment_length).long()

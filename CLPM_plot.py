@@ -31,7 +31,7 @@ def fade_node_colors(dataset, Z, bending = 1):
         tDZ1 = torch.sum(Z**2, 1)    
         tDZ2 = tDZ1.expand(tDZ1.shape[0], tDZ1.shape[0])
         tDZ1 = tDZ2.transpose(0,1)
-        S = (1.0 + tDZ1 + tDZ2 - 2*torch.mm(Z, DZ.transpose(0,1)))
+        S = (1.0 + tDZ1 + tDZ2 - 2*torch.mm(Z, Z.transpose(0,1)))
         S[range(len(S)), range(len(S))] = torch.zeros(len(S))
         colors[:,t] = torch.mean(S,1)
         #for i in range(dataset.n_nodes):

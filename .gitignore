@@ -1,3 +1,4 @@
 *.png
 *.pdf
 *.DS_Store
+SimulationStudy_A/results/snaps/*.png

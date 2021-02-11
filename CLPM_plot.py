@@ -27,12 +27,13 @@ def fade_node_colors(dataset, Z, bending = 1):
     """
     colors = np.zeros((dataset.n_nodes, dataset.n_changepoints))
     for t in range(dataset.n_changepoints):
+        cZ = Z[:,:,t]
         print('changepoint: ', t)
-        tDZ1 = torch.sum(Z**2, 1)    
+        tDZ1 = torch.sum(cZ**2, 1)    
         tDZ2 = tDZ1.expand(tDZ1.shape[0], tDZ1.shape[0])
         tDZ1 = tDZ2.transpose(0,1)
-        S = (1.0 + tDZ1 + tDZ2 - 2*torch.mm(Z, Z.transpose(0,1)))
-        S[range(len(S)), range(len(S))] = torch.zeros(len(S))
+        S = (1.0 + tDZ1 + tDZ2 - 2*torch.mm(cZ, cZ.transpose(0,1)))
+        S[range(len(S)), range(len(S))] = torch.zeros(len(S), dtype = torch.float64)
         colors[:,t] = torch.mean(S,1)
         #for i in range(dataset.n_nodes):
         #    for j in range(dataset.n_nodes):
@@ -107,7 +108,7 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi = 100
             colors_large[i,frame] = (1-delta)*node_colors[i,cp0] + delta*node_colors[i,cp1]
             sizes_large[i,frame] = (1-delta)*node_sizes[i,cp0] + delta*node_sizes[i,cp1]
     pos_limit = np.abs(pos).max()
-    for frame in range(n_frames):
+    for frame in range(n_frames-1):
         print('(2) - frame: ', frame)
         plt.figure()
         if times == None:
@@ -121,11 +122,11 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi = 100
             if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = cividis(colors_large[idi,frame]))
             #if frame < n_frames-1: plt.plot([pos[idi,0,frame+0], pos[idi,0,frame+1]], [pos[idi,1,frame+0], pos[idi,1,frame+1]], 'k-', alpha = 0.3)
             #if frame < n_frames-2: plt.plot([pos[idi,0,frame+1], pos[idi,0,frame+2]], [pos[idi,1,frame+1], pos[idi,1,frame+2]], 'k-', alpha = 0.1)
-            plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'ro', markersize = 1 + sizes_large[idi,frame] * 8, alpha = 1, color = cividis(colors_large[idi,frame]))
+            plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.4, alpha = 1, markerfacecolor =cividis(colors_large[idi,frame]))
         plt.savefig('results/snaps/snap_'+str(frame)+'.png', dpi = dpi)
         plt.close()
     images = []
-    for i in range(n_frames):
+    for i in range(n_frames-1):
         images.append('results/snaps/snap_'+str(i)+'.png')
     return images
 

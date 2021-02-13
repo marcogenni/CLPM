@@ -35,6 +35,8 @@ for row in range(len(Z_long)):
     val = Z_long.iloc[row,3]
     Z[i.astype('int'),d.astype('int'),t.astype('int')] = val
 
+Z = torch.abs(Z)
+
 # times
 from datetime import datetime
 

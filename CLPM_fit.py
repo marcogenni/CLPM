@@ -44,8 +44,8 @@ def projection_model_negloglike(dataset, Z, device = "cpu"):
     
     # Prior contribution, this roughly corresponds to a gaussian prior on the initial positions and increments - you can think of this as a penalisation term
     prior = 0
-    prior += 0.* torch.sum(Z[:,:,0]**2)
-    prior += 7. * torch.sum((Z[:,:,1:(dataset.n_changepoints)] - Z[:,:,0:(dataset.n_changepoints-1)])**2)
+    prior += 10.* torch.sum(Z[:,:,0]**2)
+    prior += 10. * torch.sum((Z[:,:,1:(dataset.n_changepoints)] - Z[:,:,0:(dataset.n_changepoints-1)])**2)
     
     # This evaluates the poisson logrates at the timestamps when each of the interactions happen
     kappa = (dataset.timestamps // dataset.segment_length).long()
@@ -74,7 +74,7 @@ def projection_model_negloglike(dataset, Z, device = "cpu"):
     
     return prior - torch.sum(torch.log(first_likelihood_term)) + integral
 
-def distance_negloglike(dataset, Z, beta, device = "cpu"):
+def distance_model_negloglike(dataset, Z, beta, device = "cpu"):
     # Prior contribution, this roughly corresponds to a gaussian prior on the initial positions and increments - you can think of this as a penalisation term
     prior = 0
     prior += 10.0 * torch.sum(Z[:,:,0]**2)
@@ -124,9 +124,12 @@ def distance_negloglike(dataset, Z, beta, device = "cpu"):
         integral += S.sum()        
     return prior - beta*len(dataset) - torch.sum(first_likelihood_term) + torch.sqrt(2*torch.tensor([math.pi], dtype=torch.float64, device = device))*torch.exp(beta)*integral
 
-def FitOneShot(dataset, Z, beta, optimiser, scheduler=None, device = "cpu"):
+def FitOneShot(dataset, Z, optimiser, beta = None, scheduler=None, device = "cpu", model = "projection"):
     optimiser.zero_grad()
-    loss_function = distance_negloglike(dataset, Z, beta, device)
+    if model == 'distance':
+        loss_function = distance_model_negloglike(dataset, Z, beta, device)
+    elif model == 'projection':
+        loss_function = projection_model_negloglike(dataset, Z, device)
     loss_function.backward()
     optimiser.step()
     if not scheduler == None:

@@ -2,3 +2,5 @@
 *.pdf
 *.DS_Store
 SimulationStudy_A/results/snaps/*.png
+*.mp4
+**/**/*.mp4

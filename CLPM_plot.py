@@ -72,7 +72,7 @@ def fade_node_sizes(dataset, bending = 1):
     sizes /= sizes.max()
     return sizes
 
-def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi = 100, times = None):
+def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi = 100, times = None, node_to_track = None):
     """
     Creates a sequence of images that will compose the video.
     @param      Z               the latent positions from the output of the fitting algorithm
@@ -117,12 +117,18 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi = 100
             plt.title("Latent Positions at time " + times[frame], loc = "left")
         plt.xlim((-pos_limit,pos_limit))
         plt.ylim((-pos_limit,pos_limit))
-        for idi in range(n_nodes):
-            if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = cividis(colors_large[idi,frame]))
-            if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = cividis(colors_large[idi,frame]))
-            #if frame < n_frames-1: plt.plot([pos[idi,0,frame+0], pos[idi,0,frame+1]], [pos[idi,1,frame+0], pos[idi,1,frame+1]], 'k-', alpha = 0.3)
-            #if frame < n_frames-2: plt.plot([pos[idi,0,frame+1], pos[idi,0,frame+2]], [pos[idi,1,frame+1], pos[idi,1,frame+2]], 'k-', alpha = 0.1)
-            plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.4, alpha = 1, markerfacecolor =cividis(colors_large[idi,frame]))
+        for idi in range(n_nodes):        
+            if idi != node_to_track:
+                if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = cividis(colors_large[idi,frame]))
+                if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.5, color = cividis(colors_large[idi,frame]))
+                #if frame < n_frames-1: plt.plot([pos[idi,0,frame+0], pos[idi,0,frame+1]], [pos[idi,1,frame+0], pos[idi,1,frame+1]], 'k-', alpha = 0.3)
+                #if frame < n_frames-2: plt.plot([pos[idi,0,frame+1], pos[idi,0,frame+2]], [pos[idi,1,frame+1], pos[idi,1,frame+2]], 'k-', alpha = 0.1)
+                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 0.6, markerfacecolor =cividis(colors_large[idi,frame]))
+            else:
+                if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = 'red')
+                if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = 'red')
+                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= 'red')
+                
         plt.savefig('results/snaps/snap_'+str(frame)+'.png', dpi = dpi)
         plt.close()
     images = []
@@ -160,7 +166,7 @@ def make_video(outvid, images, outimg = None, fps = 2, size = (600,450), is_colo
     vid.release()
     return vid
 
-def clpm_animation(outvid, Z, changepoints, frames_btw, node_colors, node_sizes, dpi, period, size = (1200,900), is_color = True, format = "mp4v", times = None):
+def clpm_animation(outvid, Z, changepoints, frames_btw, node_colors, node_sizes, dpi, period, size = (1200,900), is_color = True, format = "mp4v", times = None, node_to_track = None):
     """
     Combines the functions create_snaps and make_video to produce the animation for a fitted clpm
     @param      outvid          output video
@@ -177,7 +183,7 @@ def clpm_animation(outvid, Z, changepoints, frames_btw, node_colors, node_sizes,
     @param      times           optional time labels (dates) to plot in the title of each snap
     @return                     see make_video
     """
-    images = create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi, times)
+    images = create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, dpi, times, node_to_track)
     fps = (frames_btw+1) / period
     return make_video(outvid, images, None, fps, size, is_color, format)
 

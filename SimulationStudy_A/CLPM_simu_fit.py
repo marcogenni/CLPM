@@ -43,9 +43,9 @@ beta = torch.tensor(np.random.normal(size = 1), dtype = torch.float64, device = 
 
 
 ### OPTIMISATION
-model_type = 'projection'
+model_type = 'distance'
 epochs = 2000
-learning_rate = 1e-4  # 1e-2
+learning_rate = 1e-2  # 1e-2
 optimiser = torch.optim.SGD([{'params': beta, "lr": 1e-07},
                               {'params': Z},], 
                             lr=learning_rate)
@@ -53,7 +53,7 @@ optimiser = torch.optim.SGD([{'params': beta, "lr": 1e-07},
 scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size = epochs // 10, gamma = 0.995)
 loss_function_values = np.zeros(epochs)
 for epoch in range(epochs):
-    loss_function_values[epoch] = FitOneShot(dataset, Z, optimiser, device = device, model = model_type).item()
+    loss_function_values[epoch] = FitOneShot(dataset, Z, beta = beta, optimiser=optimiser, device = device, model = model_type).item()
     print("Epoch:", epoch, "\t\tLR (beta):", "{:2e}".format(optimiser.param_groups[0]['lr']), "\t\tLR (Z):", "{:2e}".format(optimiser.param_groups[1]['lr']), "\t\tLoss:", round(loss_function_values[epoch],3))
     
 ### Plot loss

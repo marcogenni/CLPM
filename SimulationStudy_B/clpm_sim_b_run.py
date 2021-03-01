@@ -24,7 +24,7 @@ folder = ''
 
 edgelist = pd.read_csv(folder+'input/edgelist.csv')
 
-n_changepoints = 10
+n_changepoints = 20
 time_max = 4# in this application we can use the true value
 # time_max = np.max(edgelist.iloc[:,0])
 changepoints = torch.tensor( np.linspace(start = 0.0, stop = time_max + 0.0001, num = n_changepoints) , dtype = torch.float64, device = device) 
@@ -40,7 +40,7 @@ beta = torch.tensor(np.random.normal(size = 1), dtype = torch.float64, device = 
 
 
 ### OPTIMISATION
-epochs = 1000
+epochs = 3000
 learning_rate = 2e-4
 optimiser = torch.optim.SGD([{'params': beta, "lr": 1e-06},
                              {'params': Z},], 
@@ -60,8 +60,8 @@ frames_btw = 20
 node_colors = fade_node_colors(dataset, Z, bending = 1)
 node_sizes = fade_node_sizes(dataset, bending = 1)
 dpi = 100
-period = 1
-size = (1200,900)
+period = 0.5
+size = (900,900)
 is_color = True
 formato = 'mp4v'
 

@@ -626,20 +626,12 @@ def ClpmPlot(model_type = 'distance',
     
     
     folder = ''
-    
+    ## reading the edgelist 
     edgelist_ = pd.read_csv('edgelist.csv')
-    if sub_graph == True:
-        n_nodes = np.max(edgelist_.iloc[:,1:3].values)+1
-        sub_nodes, edgelist = get_sub_graph(edgelist_.copy(), type_of = type_of)
-        edgelist, conversion = edgelist_conversion(edgelist,sub_nodes,n_nodes) 
-    else:
-        edgelist = edgelist_
+    ## reading the latent postions
+    n_nodes = np.max(edgelist_.iloc[:,1:3].values)+1
     changepoints = np.loadtxt(folder+"output_"+model_type+"/changepoints.csv", delimiter = ',')
-    n_changepoints = len(changepoints)
-    timestamps = torch.tensor(edgelist.iloc[:,0:1].values, dtype = torch.float64)
-    interactions = torch.tensor(edgelist.iloc[:,1:3].values, dtype = torch.long)
-    n_nodes = torch.max(interactions).item() + 1
-    dataset = MDataset(timestamps, interactions, changepoints, transform = True)
+    n_changepoints = len(changepoints)    
     Z = torch.zeros(size = (n_nodes,2,(n_changepoints)), dtype = torch.float64)
     Z_long = pd.read_csv(folder+'output_'+model_type+'/positions.csv', header = None)
     for row in range(len(Z_long)):
@@ -648,6 +640,20 @@ def ClpmPlot(model_type = 'distance',
         t = Z_long.iloc[row,2]-1
         val = Z_long.iloc[row,3]
         Z[i.astype('int'),d.astype('int'),t.astype('int')] = val
+        
+    if sub_graph == True:
+        sub_nodes, edgelist = get_sub_graph(edgelist_.copy(), 
+                                            type_of = type_of, 
+                                            n_sub_nodes = n_sub_nodes)
+        edgelist, conversion = edgelist_conversion(edgelist,sub_nodes,n_nodes) 
+        Z = Z[sub_nodes,:,:]    
+        
+    else:
+        edgelist = edgelist_
+    timestamps = torch.tensor(edgelist.iloc[:,0:1].values, dtype = torch.float64)
+    interactions = torch.tensor(edgelist.iloc[:,1:3].values, dtype = torch.long)
+    n_nodes = torch.max(interactions).item() + 1
+    dataset = MDataset(timestamps, interactions, changepoints, transform = True)
     
     if model_type == 'projection':
         Z = Z**2

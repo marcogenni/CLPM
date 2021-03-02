@@ -464,7 +464,8 @@ def ClpmPlot(model_type = 'distance',
              size = (1200,900),
              is_color = True,
              formato = 'mp4v',
-             frames_btw = 5 
+             frames_btw = 5,
+             node_to_track = None
         ):
     '''
     
@@ -478,6 +479,7 @@ def ClpmPlot(model_type = 'distance',
     is_color : Boolean, the default is True.
     formato : See make video. The default is 'mp4v'.
     frames_btw : How many interpolations to produce between to consecutive changepoints. The default is 5.
+    node_to_track: a node (number) you would like to see in red
 
     Returns
     -------
@@ -565,7 +567,8 @@ def ClpmPlot(model_type = 'distance',
                    frames_btw, 
                    node_colors, 
                    node_sizes,
-                   dpi, period, size, is_color, formato, node_to_track = 0, model_type=model_type)
+                   dpi, period, size, is_color, formato, 
+                   node_to_track = node_to_track, model_type=model_type)
 
 
 

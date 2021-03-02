@@ -5,3 +5,4 @@ __pycache__
 SimulationStudy_A/results/snaps/*.png
 *.mp4
 **/**/*.mp4
+*.Rhistory

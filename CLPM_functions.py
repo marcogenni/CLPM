@@ -260,8 +260,12 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
             plt.title("Latent Positions at time " + str(round(cps_large[frame],2)), loc = "left")
         else:
             plt.title("Latent Positions at time " + times[frame], loc = "left")
-        plt.xlim((-pos_limit,pos_limit))
-        plt.ylim((-pos_limit,pos_limit))
+        if model_type == 'distance':
+            plt.xlim((-pos_limit,pos_limit))
+            plt.ylim((-pos_limit,pos_limit))
+        else:
+            plt.xlim((-.1,pos_limit))
+            plt.ylim((-.1,pos_limit))            
         for idi in range(n_nodes):        
             if idi != node_to_track:
                 if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.2, color = cividis(colors_large[idi,frame]))
@@ -629,7 +633,7 @@ def ClpmPlot(model_type = 'distance',
     ## reading the edgelist 
     edgelist_ = pd.read_csv('edgelist.csv')
     ## reading the latent postions
-    n_nodes = np.max(edgelist_.iloc[:,1:3].values)+1
+    n_nodes = (np.max(edgelist_.iloc[:,1:3].values)+1).astype(int)
     changepoints = np.loadtxt(folder+"output_"+model_type+"/changepoints.csv", delimiter = ',')
     n_changepoints = len(changepoints)    
     Z = torch.zeros(size = (n_nodes,2,(n_changepoints)), dtype = torch.float64)

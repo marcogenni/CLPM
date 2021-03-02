@@ -152,6 +152,8 @@ def FitOneShot(dataset,
 ############
 
 import numpy as np
+import matplotlib
+matplotlib.use('pdf')
 from matplotlib import pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
@@ -511,8 +513,6 @@ def ClpmFit(epochs,
             
         
     ### Plotting the loss
-    import matplotlib
-    matplotlib.use('pdf')
     import matplotlib.pyplot as plt
     plt.figure()
     plt.plot(loss_function_values)

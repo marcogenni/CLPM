@@ -627,7 +627,13 @@ def ClpmPlot(model_type = 'distance',
     
     folder = ''
     
-    edgelist = pd.read_csv('edgelist.csv')
+    edgelist_ = pd.read_csv('edgelist.csv')
+    if sub_graph == True:
+        n_nodes = np.max(edgelist_.iloc[:,1:3].values)+1
+        sub_nodes, edgelist = get_sub_graph(edgelist_.copy(), type_of = type_of)
+        edgelist, conversion = edgelist_conversion(edgelist,sub_nodes,n_nodes) 
+    else:
+        edgelist = edgelist_
     changepoints = np.loadtxt(folder+"output_"+model_type+"/changepoints.csv", delimiter = ',')
     n_changepoints = len(changepoints)
     timestamps = torch.tensor(edgelist.iloc[:,0:1].values, dtype = torch.float64)

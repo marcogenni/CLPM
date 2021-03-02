@@ -7,7 +7,7 @@ Created on Tue Oct 13 10:00:00 2020
 ###########
  ## FIT ##
 ###########
-
+import sys
 import math
 import torch
 from torch.utils.data import Dataset
@@ -332,6 +332,88 @@ def clpm_animation(outvid, Z, changepoints, frames_btw, node_colors, node_sizes,
     return make_video(outvid, images, None, fps, size, is_color, format)
 
 
+#############################
+ ## Auxiliary function(s) ##
+############################# 
+def get_sub_graph(edgelist, 
+                  n_hubs=2, 
+                  type_of = 'friendship', 
+                  n_sub_nodes = 100
+                  ):
+    """
+    
+
+    Parameters
+    ----------
+    edgelist : The interactions edgelist
+    n_hubs : An integer equal to the number of hubs whose friends will be considered for the plot. The default is 2.
+    type_of : A string, either 'friendship' or 'degree', designating the way the sub-graph will be extracted. The default is 'friendship'.
+    n_sub_nodes : An integer indicating the number of nodes of the extracted sub-graph (ignored if type = 'friendship'). The default is 100.
+
+    Returns
+    -------
+    sub_nodes: The array containing the subnodes forming the sub-graph.
+    edgelist : The edgelist corresponding to the sub-graph.
+
+    """
+    n_nodes = np.max(edgelist['receiver']) + 1
+    Adj = np.zeros(shape = (n_nodes, n_nodes))
+    for idx in range(len(edgelist)):
+        sender = edgelist.iloc[idx,1]
+        receiver = edgelist.iloc[idx,2]
+        Adj[sender, receiver] += 1
+        Adj[receiver, sender] += 1
+    
+    deg = np.sum(Adj, axis = 1)    
+    if type_of == 'friendship':
+        # Three most active nodes
+        hubs = np.argsort(-deg)[0:n_hubs]  
+        sAdj1 = Adj[hubs,:]  
+        tmp = np.sum(sAdj1, 0) 
+        sub_nodes = np.where(tmp != 0)
+        pos_1 = np.isin(edgelist['sender'], sub_nodes)
+        pos_2 = np.isin(edgelist['receiver'], sub_nodes)
+        pos_3 = pos_1 & pos_2 
+        pos_final = np.where(pos_3 == True)[0]
+        edgelist = edgelist.iloc[pos_final, :]
+        return sub_nodes[0], edgelist
+    elif type_of == 'degree':
+        sub_nodes = np.argsort(-deg)[0:n_sub_nodes]
+        sub_nodes = np.sort(sub_nodes)
+        pos_1 = np.isin(edgelist['sender'], sub_nodes)
+        pos_2 = np.isin(edgelist['receiver'], sub_nodes)
+        pos_3 = pos_1 & pos_2 
+        pos_final = np.where(pos_3 == True)[0]
+        edgelist = edgelist.iloc[pos_final, :]
+        return sub_nodes, edgelist
+    else:
+        print('Error: unknown type_of!', sys.stderr)
+        
+
+def edgelist_conversion(edgelist_, sub_nodes, n_nodes):
+    """
+    This function takes the new edgelist output by get_sub_graph and renames both senders and receivers in  such a way to have a continuous list of nodes
+    
+    Parameters
+    ----------
+    edgelist_ : The new edgelist related to the subgraph extracted by get_sub_graph.
+    sub_nodes : The subset of the original nodes' set forming the sub-graph.
+    n_nodes : The number of nodes in the **orginal** graph.
+
+    Returns
+    -------
+    The new edgelist with renamed senders/receivers and a conversion table for nodes.
+
+    """
+    new_n_nodes = len(sub_nodes)
+    conversion = np.repeat(-1,n_nodes)
+    conversion[sub_nodes] = np.arange(0,new_n_nodes)
+    edgelist_['sender'] = conversion[edgelist_['sender'].values]
+    edgelist_['receiver'] = conversion[edgelist_['receiver'].values]
+    return edgelist_, conversion
+
+
+
 ##################################################
   ## Main functions to be called by the user ###
 ##################################################
@@ -465,7 +547,13 @@ def ClpmPlot(model_type = 'distance',
              is_color = True,
              formato = 'mp4v',
              frames_btw = 5,
-             node_to_track = None
+             node_to_track = None,
+             sub_graph = False,
+             type_of = 'friendship',
+             n_hubs = 2,
+             n_sub_nodes = 100,
+             start_date = None,
+             end_date = None
         ):
     '''
     
@@ -480,7 +568,12 @@ def ClpmPlot(model_type = 'distance',
     formato : See make video. The default is 'mp4v'.
     frames_btw : How many interpolations to produce between to consecutive changepoints. The default is 5.
     node_to_track: a node (number) you would like to see in red
-
+    sug_graph: A boolean indicating weather the all graph will be plotted (False) or just a sub-graph (True).Default is False
+    type_of: A string either being 'friendship' or 'degree' to detail the way the subgraph is extracted. It will be ignored if sub_graph = False. 
+    n_hubs: See get_sub_graph. Default is 2.
+    n_sub_nodes: See get_sub_graph. Default is 100.
+    start_date: A tuple with five integer entries: year, month, day, hour, minute. Default is None.
+    end_date: A tuple with five integer entries: year, month, day, hour, minute. Default is None.
     Returns
     -------
     The dynamic graph embedding video in the results/model_type/ folder.
@@ -560,6 +653,22 @@ def ClpmPlot(model_type = 'distance',
     node_colors = fade_node_colors(dataset, Z, bending = 1)
     node_sizes = fade_node_sizes(dataset, bending = 1)
     
+    times = None
+    if start_date is not None:
+        if end_date is None:
+            print('Fatal error: both start_date and end_date muste be either of type None or tuples', sys.stderr)
+        else:            
+            n_cps = len(changepoints)
+            n_frames = (n_cps-1)*frames_btw + n_cps
+            now = datetime(start_date[0],start_date[1],start_date[2],start_date[3],start_date[4])
+            last = datetime(end_date[0], end_date[1], end_date[2], end_date[3], end_date[4])
+            if now >=last:
+                print('Fatal error: end date is earlier than start date!', sys.stderr)
+            delta = (last - now)/(n_frames-1)
+            times = []
+            while now < last:
+                times.append(now.strftime('%H:%M:%S'))
+                now += delta
     
     clpm_animation(outvid, 
                    Z.detach().numpy(), 
@@ -567,8 +676,14 @@ def ClpmPlot(model_type = 'distance',
                    frames_btw, 
                    node_colors, 
                    node_sizes,
-                   dpi, period, size, is_color, formato, 
-                   node_to_track = node_to_track, model_type=model_type)
+                   dpi,
+                   period, 
+                   size,
+                   is_color, 
+                   formato, 
+                   times = times,
+                   node_to_track = node_to_track, 
+                   model_type=model_type)
 
 
 

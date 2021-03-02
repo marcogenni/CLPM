@@ -9,65 +9,6 @@ sys.path.append('../')
 from CLPM_fit import *
 from CLPM_plot import *
 folder = ''
-
-#############################
- ## Auxiliary function(s) ##
-############################# 
-def get_sub_graph(edgelist, n_hubs=2, type_of = 'friendship', n_sub_nodes = 100):
-    n_nodes = np.max(edgelist['receiver']) + 1
-    Adj = np.zeros(shape = (n_nodes, n_nodes))
-    for idx in range(len(edgelist)):
-        sender = edgelist.iloc[idx,1]
-        receiver = edgelist.iloc[idx,2]
-        Adj[sender, receiver] += 1
-        Adj[receiver, sender] += 1
-    
-    deg = np.sum(Adj, axis = 1)    
-    if type_of == 'friendship':
-        # Three most active nodes
-        hubs = np.argsort(-deg)[0:n_hubs]  
-        sAdj1 = Adj[hubs,:]  
-        tmp = np.sum(sAdj1, 0) 
-        sub_nodes = np.where(tmp != 0)
-        pos_1 = np.isin(edgelist['sender'], sub_nodes)
-        pos_2 = np.isin(edgelist['receiver'], sub_nodes)
-        pos_3 = pos_1 & pos_2 
-        pos_final = np.where(pos_3 == True)[0]
-        edgelist = edgelist.iloc[pos_final, :]
-        return sub_nodes[0], edgelist
-    elif type_of == 'degree':
-        sub_nodes = np.argsort(-deg)[0:n_sub_nodes]
-        sub_nodes = np.sort(sub_nodes)
-        pos_1 = np.isin(edgelist['sender'], sub_nodes)
-        pos_2 = np.isin(edgelist['receiver'], sub_nodes)
-        pos_3 = pos_1 & pos_2 
-        pos_final = np.where(pos_3 == True)[0]
-        edgelist = edgelist.iloc[pos_final, :]
-        return sub_nodes, edgelist
-        
-
-def edgelist_conversion(edgelist_, sub_nodes, n_nodes):
-    """
-    This function takes the new edgelist output by get_sub_graph and renames both senders and receivers in  such a way to have a continuous list of nodes
-    
-    Parameters
-    ----------
-    edgelist_ : The new edgelist related to the subgraph extracted by get_sub_graph.
-    sub_nodes : The subset of the original nodes' set forming the sub-graph.
-    n_nodes : The number of nodes in the **orginal** graph.
-
-    Returns
-    -------
-    The new edgelist with renamed senders/receivers and a conversion table for nodes.
-
-    """
-    new_n_nodes = len(sub_nodes)
-    conversion = np.repeat(-1,n_nodes)
-    conversion[sub_nodes] = np.arange(0,new_n_nodes)
-    edgelist_['sender'] = conversion[edgelist_['sender'].values]
-    edgelist_['receiver'] = conversion[edgelist_['receiver'].values]
-    return edgelist_, conversion
-
 ## most active nodes: 13, 153, 373    
     
 edgelist = pd.read_csv('input/edgelist.csv')

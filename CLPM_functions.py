@@ -216,7 +216,7 @@ def fade_node_sizes(dataset, bending = 1):
     sizes /= sizes.max()
     return sizes
 
-def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_type, dpi = 100, times = None, node_to_track = None):
+def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_type, dpi = 100, times = None, nodes_to_track = None):
     """
     Creates a sequence of images that will compose the video.
     @param      Z               the latent positions from the output of the fitting algorithm
@@ -227,8 +227,16 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
     @param      dpi             resolution of the exported pdf images
     @param      model_type      a string, either 'projection' or 'distance' 
     @param      times           optional time labels (dates) to plot in the title of each snap
+    @param      nodes_to_track  a list of up to three integers corresponding to nodes to track with a special color
     @return                     a list of strings indicating the path to the images that must be collated in the video
     """
+    if nodes_to_track is not None:
+        if type(nodes_to_track) != list:
+            print('Fatal error! nodes_to_track must be a list with up to three integers', sys.stderr)
+        else:
+            if len(nodes_to_track) > 3:
+                            print('Fatal error! nodes_to_track must be a list with up to three integers', sys.stderr)
+    special_colors = ['red', 'blue', 'green']
     n_nodes = Z.shape[0]
     n_dim = Z.shape[1]
     n_cps = Z.shape[2]
@@ -265,18 +273,20 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
             plt.ylim((-pos_limit,pos_limit))
         else:
             plt.xlim((-.1,pos_limit))
-            plt.ylim((-.1,pos_limit))            
+            plt.ylim((-.1,pos_limit))      
         for idi in range(n_nodes):        
-            if idi != node_to_track:
+            if idi not in nodes_to_track:
                 if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.2, color = cividis(colors_large[idi,frame]))
                 if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.3, color = cividis(colors_large[idi,frame]))
                 #if frame < n_frames-1: plt.plot([pos[idi,0,frame+0], pos[idi,0,frame+1]], [pos[idi,1,frame+0], pos[idi,1,frame+1]], 'k-', alpha = 0.3)
                 #if frame < n_frames-2: plt.plot([pos[idi,0,frame+1], pos[idi,0,frame+2]], [pos[idi,1,frame+1], pos[idi,1,frame+2]], 'k-', alpha = 0.1)
                 plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 0.4, markerfacecolor =cividis(colors_large[idi,frame]))
             else:
-                if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = 'red')
-                if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = 'red')
-                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= 'red')
+                its_index = nodes_to_track.index(idi)
+                its_color = special_colors[its_index]
+                if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = its_color)
+                if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = its_color)
+                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
                 
         plt.savefig('results_'+model_type+'/snaps/snap_'+str(frame)+'.png', dpi = dpi)
         plt.close()
@@ -315,7 +325,7 @@ def make_video(outvid, images, outimg = None, fps = 2, size = (600,450), is_colo
     vid.release()
     return vid
 
-def clpm_animation(outvid, Z, changepoints, frames_btw, node_colors, node_sizes, dpi, period, size = (1200,900), is_color = True, format = "mp4v", times = None, node_to_track = None, model_type = "distance"):
+def clpm_animation(outvid, Z, changepoints, frames_btw, node_colors, node_sizes, dpi, period, size = (1200,900), is_color = True, format = "mp4v", times = None, nodes_to_track = None, model_type = "distance"):
     """
     Combines the functions create_snaps and make_video to produce the animation for a fitted clpm
     @param      outvid          output video
@@ -333,7 +343,7 @@ def clpm_animation(outvid, Z, changepoints, frames_btw, node_colors, node_sizes,
     @param      model_type      a string. Either "distance" (default) or "projection"
     @return                     see make_video
     """
-    images = create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_type, dpi, times, node_to_track)
+    images = create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_type, dpi, times, nodes_to_track)
     fps = (frames_btw+1) / period
     return make_video(outvid, images, None, fps, size, is_color, format)
 
@@ -551,7 +561,7 @@ def ClpmPlot(model_type = 'distance',
              is_color = True,
              formato = 'mp4v',
              frames_btw = 5,
-             node_to_track = None,
+             nodes_to_track = None,
              sub_graph = False,
              type_of = 'friendship',
              n_hubs = 2,
@@ -571,7 +581,7 @@ def ClpmPlot(model_type = 'distance',
     is_color : Boolean, the default is True.
     formato : See make video. The default is 'mp4v'.
     frames_btw : How many interpolations to produce between to consecutive changepoints. The default is 5.
-    node_to_track: a node (number) you would like to see in red
+    nodes_to_track: a list with up to three integers corresponding to nodes to track with special colors
     sug_graph: A boolean indicating weather the all graph will be plotted (False) or just a sub-graph (True).Default is False
     type_of: A string either being 'friendship' or 'degree' to detail the way the subgraph is extracted. It will be ignored if sub_graph = False. 
     n_hubs: See get_sub_graph. Default is 2.
@@ -698,7 +708,7 @@ def ClpmPlot(model_type = 'distance',
                    is_color, 
                    formato, 
                    times = times,
-                   node_to_track = node_to_track, 
+                   nodes_to_track = nodes_to_track, 
                    model_type=model_type)
 
 

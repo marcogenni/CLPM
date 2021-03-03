@@ -280,13 +280,13 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
                 if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.6, color = cividis(colors_large[idi,frame]))
                 #if frame < n_frames-1: plt.plot([pos[idi,0,frame+0], pos[idi,0,frame+1]], [pos[idi,1,frame+0], pos[idi,1,frame+1]], 'k-', alpha = 0.3)
                 #if frame < n_frames-2: plt.plot([pos[idi,0,frame+1], pos[idi,0,frame+2]], [pos[idi,1,frame+1], pos[idi,1,frame+2]], 'k-', alpha = 0.1)
-                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 2 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 0.6, markerfacecolor =cividis(colors_large[idi,frame]))
+                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 0.8, markerfacecolor =cividis(colors_large[idi,frame]))
             else:
                 its_index = nodes_to_track.index(idi)
                 its_color = special_colors[its_index]
                 if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = its_color)
                 if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = its_color)
-                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 2 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
+                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
                 
         plt.savefig('results_'+model_type+'/snaps/snap_'+str(frame)+'.png', dpi = dpi)
         plt.close()
@@ -676,10 +676,11 @@ def ClpmPlot(model_type = 'distance',
     # times
     from datetime import datetime
     
+    ###************************************************************
     outvid = folder + 'results_'+model_type+'/video.mp4'
-    node_colors = fade_node_colors(dataset, Z, bending = 1)
-    node_sizes = fade_node_sizes(dataset, bending = 1)
-    
+    node_colors = fade_node_colors(dataset, Z, bending = .6)
+    node_sizes = fade_node_sizes(dataset, bending = .6)
+    ###************************************************************
     times = None
     if start_date is not None:
         if end_date is None:

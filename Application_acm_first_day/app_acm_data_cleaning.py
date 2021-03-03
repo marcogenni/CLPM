@@ -16,7 +16,7 @@ edgelist.columns = ["timestamp", "sender", "receiver"]
 
 edgelist.iloc[:,0] -= edgelist.iloc[:,0].min()
 edgelist.iloc[:,0] /= 3600
-pos = np.where(edgelist.iloc[:,0]<24)[0]
+pos = np.where(edgelist.iloc[:,0]<13)[0]
 edgelist = edgelist.iloc[pos,:]
 
 #edgelist.iloc[:,0] *= 24# (Marco: this should be changed to a suitable number of hours or minutes representing the length of the study)
@@ -42,7 +42,7 @@ for k in range(2):
     for l in range(edgelist.shape[0]):
         edgelist.iloc[l,k+1] = permutation[edgelist.iloc[l,k+1].astype(np.int64)] - 1
 
-#edgelist.to_csv("input/edgelist.csv", index = False, header = True)
+edgelist.to_csv("edgelist.csv", index = False, header = True)
 
 counter = 0
 for idx in edgelist.values:

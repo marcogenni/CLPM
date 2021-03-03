@@ -276,17 +276,17 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
             plt.ylim((-.1,pos_limit))      
         for idi in range(n_nodes):        
             if idi not in nodes_to_track:
-                if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.2, color = cividis(colors_large[idi,frame]))
-                if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.3, color = cividis(colors_large[idi,frame]))
+                if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = cividis(colors_large[idi,frame]))
+                if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.6, color = cividis(colors_large[idi,frame]))
                 #if frame < n_frames-1: plt.plot([pos[idi,0,frame+0], pos[idi,0,frame+1]], [pos[idi,1,frame+0], pos[idi,1,frame+1]], 'k-', alpha = 0.3)
                 #if frame < n_frames-2: plt.plot([pos[idi,0,frame+1], pos[idi,0,frame+2]], [pos[idi,1,frame+1], pos[idi,1,frame+2]], 'k-', alpha = 0.1)
-                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 0.4, markerfacecolor =cividis(colors_large[idi,frame]))
+                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 2 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 0.6, markerfacecolor =cividis(colors_large[idi,frame]))
             else:
                 its_index = nodes_to_track.index(idi)
                 its_color = special_colors[its_index]
                 if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = its_color)
                 if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = its_color)
-                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
+                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 2 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
                 
         plt.savefig('results_'+model_type+'/snaps/snap_'+str(frame)+'.png', dpi = dpi)
         plt.close()
@@ -520,11 +520,12 @@ def ClpmFit(epochs,
     loss_function_values = np.zeros(epochs)
     for epoch in range(epochs):
         loss_function_values[epoch] = FitOneShot(dataset, Z, beta = beta, optimiser=optimiser, device = device, model = model_type, penalty = penalty).item()
-        if model_type == "distance":
-            print("Epoch:", epoch, "\t\tLR (beta):", "{:2e}".format(optimiser.param_groups[0]['lr']), "\t\tLR (Z):", "{:2e}".format(optimiser.param_groups[1]['lr']), "\t\tLoss:", round(loss_function_values[epoch],3))
-        else:
-            print("Epoch:", epoch, "\t\tLR (Z):", "{:2e}".format(optimiser.param_groups[1]['lr']), "\t\tLoss:", round(loss_function_values[epoch],3))
-            
+        if epoch % 10 == 0:
+          if model_type == "distance":
+              print("Epoch:", epoch, "\t\tLR (beta):", "{:2e}".format(optimiser.param_groups[0]['lr']), "\t\tLR (Z):", "{:2e}".format(optimiser.param_groups[1]['lr']), "\t\tLoss:", round(loss_function_values[epoch],3))
+          else:
+              print("Epoch:", epoch, "\t\tLR (Z):", "{:2e}".format(optimiser.param_groups[1]['lr']), "\t\tLoss:", round(loss_function_values[epoch],3))
+              
         
     ### Plotting the loss
     import matplotlib.pyplot as plt
@@ -561,7 +562,7 @@ def ClpmPlot(model_type = 'distance',
              is_color = True,
              formato = 'mp4v',
              frames_btw = 5,
-             nodes_to_track = None,
+             nodes_to_track = [None],
              sub_graph = False,
              type_of = 'friendship',
              n_hubs = 2,

@@ -66,13 +66,15 @@ def projection_model_negloglike(dataset, Z_in, penalty, device = "cpu"):
     # This evaluates the value of the integral for the rate function, across all pairs of nodes and timeframes
     integral = 0
     for k in list(range(dataset.n_changepoints)[0:(dataset.n_changepoints-1)]):
+        tau_cur = dataset.changepoints[k]
+        tau_new = dataset.changepoints[k+1]        
         Z_cur = Z[:,:,k]
         Z_new = Z[:,:,k+1]
         Sij00 = ( torch.sum(torch.mm(Z_cur,Z_cur.t())) - torch.sum(Z_cur*Z_cur) ) / 6
         Sij11 = ( torch.sum(torch.mm(Z_new,Z_new.t())) - torch.sum(Z_new*Z_new) ) / 6
         Sij01 = ( torch.sum(torch.mm(Z_cur,Z_new.t())) - torch.sum(Z_cur*Z_new) ) / 12
         Sij10 = ( torch.sum(torch.mm(Z_new,Z_cur.t())) - torch.sum(Z_new*Z_cur) ) / 12
-        integral += Sij00 + Sij11 + Sij01 + Sij10
+        integral += (tau_new - tau_cur)*(Sij00 + Sij11 + Sij01 + Sij10)
     
     return prior - torch.sum(torch.log(first_likelihood_term)) + integral
 

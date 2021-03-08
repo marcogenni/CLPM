@@ -809,7 +809,7 @@ def ClpmSnap(extraction_times,
 
     Parameters
     ----------
-    extraction_times: either floats or dates corresponding to the snap to extract
+    extraction_times: either a float list or a string list corresponding to the snap to extract (e.g. [9.15, 10.40] oppure ['08:10:00', '09:20:00'])
     model_type : Either 'distance' or 'projection'. The default is 'projection'.
     dpi : The resolution of the exported image. The default is 250.
     period : Time it takes on video to progress from one changepoint to the next. The default is 1.

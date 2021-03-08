@@ -218,7 +218,7 @@ def fade_node_sizes(dataset, bending = 1):
     sizes /= sizes.max()
     return sizes
 
-def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_type, dpi = 100, times = None, nodes_to_track = None):
+def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_type, dpi = 100, times = None, nodes_to_track = None, frames_to_extract = None):
     """
     Creates a sequence of images that will compose the video.
     @param      Z               the latent positions from the output of the fitting algorithm
@@ -230,6 +230,7 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
     @param      model_type      a string, either 'projection' or 'distance' 
     @param      times           optional time labels (dates) to plot in the title of each snap
     @param      nodes_to_track  a list of up to three integers corresponding to nodes to track with a special color
+    @param      frames_to_extract a list containing either float numbers of dates corresponding to the frames to extrace
     @return                     a list of strings indicating the path to the images that must be collated in the video
     """
     if nodes_to_track is not None:
@@ -251,8 +252,8 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
     colors_large[:,n_frames-1] = node_colors[:,n_cps-1]
     sizes_large = np.zeros((n_nodes, n_frames))
     sizes_large[:,n_frames-1] = node_sizes[:,n_cps-1]
+    print("number of frames: ",n_frames)
     for frame in range(n_frames-1):
-        print('(1) - frame: ', frame)
         cp0 = frame // (frames_btw+1)
         cp1 = (frame // (frames_btw+1)) + 1
         delta = (frame % (frames_btw+1)) / (frames_btw+1)
@@ -263,39 +264,110 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
             colors_large[i,frame] = (1-delta)*node_colors[i,cp0] + delta*node_colors[i,cp1]
             sizes_large[i,frame] = (1-delta)*node_sizes[i,cp0] + delta*node_sizes[i,cp1]
     pos_limit = np.abs(pos).max()
-    for frame in range(n_frames-1):
-        print('(2) - frame: ', frame)
-        plt.figure()
-        if times == None:
-            plt.title("Latent Positions at time " + str(round(cps_large[frame],2)), loc = "left")
-        else:
-            plt.title("Latent Positions at time " + times[frame], loc = "left")
-        if model_type == 'distance':
-            plt.xlim((-pos_limit,pos_limit))
-            plt.ylim((-pos_limit,pos_limit))
-        else:
-            plt.xlim((-.1,pos_limit))
-            plt.ylim((-.1,pos_limit))      
-        for idi in range(n_nodes):        
-            if idi not in nodes_to_track:
-                if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = cividis(colors_large[idi,frame]))
-                if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.6, color = cividis(colors_large[idi,frame]))
-                #if frame < n_frames-1: plt.plot([pos[idi,0,frame+0], pos[idi,0,frame+1]], [pos[idi,1,frame+0], pos[idi,1,frame+1]], 'k-', alpha = 0.3)
-                #if frame < n_frames-2: plt.plot([pos[idi,0,frame+1], pos[idi,0,frame+2]], [pos[idi,1,frame+1], pos[idi,1,frame+2]], 'k-', alpha = 0.1)
-                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 0.8, markerfacecolor =cividis(colors_large[idi,frame]))
+    ###
+    if frames_to_extract is None:
+        for frame in range(n_frames-1):
+            print('(2) - frame: ', frame)
+            plt.figure()
+            if times == None:
+                plt.title("Latent Positions at time " + str(round(cps_large[frame],2)), loc = "left")
             else:
-                its_index = nodes_to_track.index(idi)
-                its_color = special_colors[its_index]
-                if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = its_color)
-                if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = its_color)
-                plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
-                
-        plt.savefig('results_'+model_type+'/snaps/snap_'+str(frame)+'.png', dpi = dpi)
-        plt.close()
-    images = []
-    for i in range(n_frames-1):
-        images.append('results_'+model_type+'/snaps/snap_'+str(i)+'.png')
-    return images
+                plt.title("Latent Positions at time " + times[frame], loc = "left")
+            if model_type == 'distance':
+                plt.xlim((-pos_limit,pos_limit))
+                plt.ylim((-pos_limit,pos_limit))
+            else:
+                plt.xlim((-.1,pos_limit))
+                plt.ylim((-.1,pos_limit))      
+            for idi in range(n_nodes):        
+                if idi not in nodes_to_track:
+                    if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = cividis(colors_large[idi,frame]))
+                    if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.6, color = cividis(colors_large[idi,frame]))
+                    #if frame < n_frames-1: plt.plot([pos[idi,0,frame+0], pos[idi,0,frame+1]], [pos[idi,1,frame+0], pos[idi,1,frame+1]], 'k-', alpha = 0.3)
+                    #if frame < n_frames-2: plt.plot([pos[idi,0,frame+1], pos[idi,0,frame+2]], [pos[idi,1,frame+1], pos[idi,1,frame+2]], 'k-', alpha = 0.1)
+                    plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 0.8, markerfacecolor =cividis(colors_large[idi,frame]))
+                else:
+                    its_index = nodes_to_track.index(idi)
+                    its_color = special_colors[its_index]
+                    if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = its_color)
+                    if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = its_color)
+                    plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
+                    
+            plt.savefig('results_'+model_type+'/snaps/snap_'+str(frame)+'.png', dpi = dpi)
+            plt.close()
+        images = []
+        for i in range(n_frames-1):
+            images.append('results_'+model_type+'/snaps/snap_'+str(i)+'.png')
+        return images
+    else:
+        if type(frames_to_extract[0]) == float:
+            match = np.isin(np.round(cps_large,2), frames_to_extract)
+            pos_ = np.where(match==True)[0]
+            for frame in pos_:
+                print('(2) - frame: ', frame)
+                plt.figure()
+                if times == None:
+                    plt.title("Latent Positions at time " + str(round(cps_large[frame],2)), loc = "left")
+                else:
+                    plt.title("Latent Positions at time " + times[frame], loc = "left")
+                if model_type == 'distance':
+                    plt.xlim((-pos_limit,pos_limit))
+                    plt.ylim((-pos_limit,pos_limit))
+                else:
+                    plt.xlim((-.1,pos_limit))
+                    plt.ylim((-.1,pos_limit))      
+                for idi in range(n_nodes):        
+                    if idi not in nodes_to_track:
+#                        if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = cividis(colors_large[idi,frame]))
+#                        if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.6, color = cividis(colors_large[idi,frame]))
+                        #if frame < n_frames-1: plt.plot([pos[idi,0,frame+0], pos[idi,0,frame+1]], [pos[idi,1,frame+0], pos[idi,1,frame+1]], 'k-', alpha = 0.3)
+                        #if frame < n_frames-2: plt.plot([pos[idi,0,frame+1], pos[idi,0,frame+2]], [pos[idi,1,frame+1], pos[idi,1,frame+2]], 'k-', alpha = 0.1)
+                        plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 0.8, markerfacecolor =cividis(colors_large[idi,frame]))
+                    else:
+                        its_index = nodes_to_track.index(idi)
+                        its_color = special_colors[its_index]
+#                        if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = its_color)
+#                        if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = its_color)
+                        plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
+                        
+                plt.savefig('results_'+model_type+'/extracted_snaps/snap_'+str(frame)+'.png', dpi = dpi)
+                plt.close()
+        elif type(frames_to_extract[0]) == str:
+            match = np.isin(times, frames_to_extract)
+            pos_ = np.where(match==True)[0]
+            print(pos_)
+            for frame in pos_:
+                print('(2) - frame: ', frame)
+                plt.figure()
+                if times == None:
+                    plt.title("Latent Positions at time " + str(round(cps_large[frame],2)), loc = "left")
+                else:
+                    plt.title("Latent Positions at time " + times[frame], loc = "left")
+                if model_type == 'distance':
+                    plt.xlim((-pos_limit,pos_limit))
+                    plt.ylim((-pos_limit,pos_limit))
+                else:
+                    plt.xlim((-.1,pos_limit))
+                    plt.ylim((-.1,pos_limit))      
+                for idi in range(n_nodes):        
+                    if idi not in nodes_to_track:
+#                        if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = cividis(colors_large[idi,frame]))
+#                        if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.6, color = cividis(colors_large[idi,frame]))
+                        #if frame < n_frames-1: plt.plot([pos[idi,0,frame+0], pos[idi,0,frame+1]], [pos[idi,1,frame+0], pos[idi,1,frame+1]], 'k-', alpha = 0.3)
+                        #if frame < n_frames-2: plt.plot([pos[idi,0,frame+1], pos[idi,0,frame+2]], [pos[idi,1,frame+1], pos[idi,1,frame+2]], 'k-', alpha = 0.1)
+                        plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 0.8, markerfacecolor =cividis(colors_large[idi,frame]))
+                    else:
+                        its_index = nodes_to_track.index(idi)
+                        its_color = special_colors[its_index]
+#                        if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = its_color)
+#                        if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = its_color)
+                        plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
+                        
+                plt.savefig('results_'+model_type+'/extracted_snaps/snap_'+str(frame)+'.png', dpi = dpi)
+                plt.close()                
+        else:
+            print('Fatal error: unrecognized type for "frames_to_extract"!!')
+    
 
 def make_video(outvid, images, outimg = None, fps = 2, size = (600,450), is_color = True, format = "mp4v"):
     """
@@ -714,6 +786,163 @@ def ClpmPlot(model_type = 'distance',
                    times = times,
                    nodes_to_track = nodes_to_track, 
                    model_type=model_type)
+
+# To "extract" (not really...) a frame from the video 
+def ClpmSnap(extraction_times,
+             model_type = 'distance',
+             dpi = 250,
+             period = 1,
+             size = (1200,900),
+             is_color = True,
+             formato = 'mp4v',
+             frames_btw = 5,
+             nodes_to_track = [None],
+             sub_graph = False,
+             type_of = 'friendship',
+             n_hubs = 2,
+             n_sub_nodes = 100,
+             start_date = None,
+             end_date = None
+        ):
+    '''
+    
+
+    Parameters
+    ----------
+    extraction_times: either floats or dates corresponding to the snap to extract
+    model_type : Either 'distance' or 'projection'. The default is 'projection'.
+    dpi : The resolution of the exported image. The default is 250.
+    period : Time it takes on video to progress from one changepoint to the next. The default is 1.
+    size : Image resolution. The default is (1200,900).
+    is_color : Boolean, the default is True.
+    formato : See make video. The default is 'mp4v'.
+    frames_btw : How many interpolations to produce between to consecutive changepoints. The default is 5.
+    nodes_to_track: a list with up to three integers corresponding to nodes to track with special colors
+    sug_graph: A boolean indicating weather the all graph will be plotted (False) or just a sub-graph (True).Default is False
+    type_of: A string either being 'friendship' or 'degree' to detail the way the subgraph is extracted. It will be ignored if sub_graph = False. 
+    n_hubs: See get_sub_graph. Default is 2.
+    n_sub_nodes: See get_sub_graph. Default is 100.
+    start_date: A tuple with five integer entries: year, month, day, hour, minute. Default is None.
+    end_date: A tuple with five integer entries: year, month, day, hour, minute. Default is None.
+    Returns
+    -------
+    The dynamic graph embedding video in the results/model_type/ folder.
+
+    '''
+    
+    import pandas as pd
+    import numpy as np
+    import torch
+    import os, sys
+    
+    ######################################################
+    ## looks for existing directories and prepare them ##
+    ######################################################
+    
+    list_files = os.listdir()
+    
+    if model_type == 'projection':
+        if not 'output_projection' in list_files:
+            print('fatal error: no output directory detected!', sys.stderr)
+        if 'results_projection' in list_files:
+            sub_list_files = os.listdir('results_projection/')
+            if not 'extracted_snaps' in sub_list_files:
+                os.mkdir('results_projection/extracted_snaps')
+        
+    if model_type == 'distance'  :  
+        if not 'output_distance' in list_files:
+            print('fatal error: no output directory detected!', sys.stderr)    
+        if 'results_distance' in list_files:
+            sub_list_files = os.listdir('results_distance/')
+            if not 'extracted_snaps' in sub_list_files:
+                os.mkdir('results_distance/extracted_snaps')
+    
+    
+    
+    folder = ''
+    ## reading the edgelist 
+    edgelist_ = pd.read_csv('edgelist.csv')
+    ## reading the latent postions
+    n_nodes = (np.max(edgelist_.iloc[:,1:3].values)+1).astype(int)
+    changepoints = np.loadtxt(folder+"output_"+model_type+"/changepoints.csv", delimiter = ',')
+    n_changepoints = len(changepoints)    
+    Z = torch.zeros(size = (n_nodes,2,(n_changepoints)), dtype = torch.float64)
+    Z_long = pd.read_csv(folder+'output_'+model_type+'/positions.csv', header = None)
+    for row in range(len(Z_long)):
+        i = Z_long.iloc[row,0]-1
+        d = Z_long.iloc[row,1]-1
+        t = Z_long.iloc[row,2]-1
+        val = Z_long.iloc[row,3]
+        Z[i.astype('int'),d.astype('int'),t.astype('int')] = val
+        
+    if sub_graph == True:
+        sub_nodes, edgelist = get_sub_graph(edgelist_.copy(), 
+                                            type_of = type_of, 
+                                            n_sub_nodes = n_sub_nodes)
+        edgelist, conversion = edgelist_conversion(edgelist,sub_nodes,n_nodes) 
+        Z = Z[sub_nodes,:,:]    
+        
+    else:
+        edgelist = edgelist_
+    timestamps = torch.tensor(edgelist.iloc[:,0:1].values, dtype = torch.float64)
+    interactions = torch.tensor(edgelist.iloc[:,1:3].values, dtype = torch.long)
+    n_nodes = torch.max(interactions).item() + 1
+    dataset = MDataset(timestamps, interactions, changepoints, transform = True)
+    
+    if model_type == 'projection':
+        Z = Z**2
+    
+    # times
+    from datetime import datetime
+    
+    ###************************************************************
+    # outvid = folder + 'results_'+model_type+'/video.mp4'
+    node_colors = fade_node_colors(dataset, Z, bending = .6)
+    node_sizes = fade_node_sizes(dataset, bending = .6)
+    ###************************************************************
+    times = None
+    if start_date is not None:
+        if end_date is None:
+            print('Fatal error: both start_date and end_date muste be either of type None or tuples', sys.stderr)
+        else:            
+            n_cps = len(changepoints)
+            n_frames = (n_cps-1)*frames_btw + n_cps
+            now = datetime(start_date[0],start_date[1],start_date[2],start_date[3],start_date[4])
+            last = datetime(end_date[0], end_date[1], end_date[2], end_date[3], end_date[4])
+            if now >=last:
+                print('Fatal error: end date is earlier than start date!', sys.stderr)
+            delta = (last - now)/(n_frames-1)
+            times = []
+            while now < last:
+                times.append(now.strftime('%H:%M:%S'))
+                now += delta
+                
+    create_snaps(Z, 
+                 changepoints, 
+                 frames_btw, 
+                 node_colors, 
+                 node_sizes,
+                 model_type, 
+                 dpi,
+                 times, 
+                 nodes_to_track,
+                 frames_to_extract = extraction_times)            
+    
+    
+    # clpm_animation(outvid, 
+    #                Z.detach().numpy(), 
+    #                changepoints, 
+    #                frames_btw, 
+    #                node_colors, 
+    #                node_sizes,
+    #                dpi,
+    #                period, 
+    #                size,
+    #                is_color, 
+    #                formato, 
+    #                times = times,
+    #                nodes_to_track = nodes_to_track, 
+    #                model_type=model_type)
 
 
 

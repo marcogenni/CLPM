@@ -624,7 +624,9 @@ def ClpmFit(epochs,
     
     pd.DataFrame(Z_long_format).to_csv(path+'output_'+model_type+'/positions.csv', index = False, header = False)
     pd.DataFrame(loss_function_values).to_csv(path+'output_'+model_type+'/loss_function_values.csv', index = False, header = False)
-    
+    if model_type == 'distance':
+        pd.DataFrame(beta.cpu().detach().numpy()).to_csv(path+'output_'+model_type+'/beta.csv', index = False, header = False)
+
 
 ###############################################################################
     

@@ -15,7 +15,7 @@ import numpy  as np
 n_nodes = 60
 n_clusters = 3
 n_segments = 4
-low_rate = 0.75
+low_rate = 1
 high_rate = 5
 Lbd =  low_rate * np.ones(shape = (n_clusters, n_clusters, n_segments))
 Z = np.concatenate((np.repeat(0,n_nodes/3), np.repeat(1,n_nodes/3), np.repeat(2,n_nodes/3)))
@@ -31,42 +31,51 @@ for i in range(n_nodes-1):
     for j in range(i+1, n_nodes):
         Zi = Z[i]
         Zj = Z[j]
-        A[i,j,0] = np.random.poisson(Lbd[Zi,Zj,0])
+        rate = Lbd[Zi,Zj,0]
+        if (i == 0): rate = 10
+        if (j == n_nodes - 1): rate = 0.01
+        A[i,j,0] = np.random.poisson(rate)
         A[j,i,0] = A[i,j,0]
-        
+
 # Second segment: Emerging communities
-Lbd[:,:,1][np.diag_indices_from(Lbd[:,:,1])] = [6,5,4]
+Lbd[:,:,1][np.diag_indices_from(Lbd[:,:,1])] = [10,5,1]
 for i in  range(n_nodes-1):
     for j in range(i+1, n_nodes):       
         Zi = Z[i]
         Zj = Z[j]
-        A[i,j,1] = np.random.poisson(Lbd[Zi,Zj,1])
+        rate = Lbd[Zi,Zj,1]
+        if (i == 0): rate = 10
+        if (j == n_nodes - 1): rate = 0.01
+        A[i,j,1] = np.random.poisson(rate)
         A[j,i,1] = A[i,j,1]
-        
+
 # Third segment: Community - splitting
 Lbd[:,:,2][np.diag_indices_from(Lbd[:,:,2])] = [5,5,5]
 Z[:int(n_nodes/2)] = 0
-Z[int(n_nodes/2):] = 2         
+Z[int(n_nodes/2):] = 2
 for i in  range(n_nodes-1):
     for j in range(i+1, n_nodes):       
         Zi = Z[i]
         Zj = Z[j]
-        A[i,j,2] = np.random.poisson(Lbd[Zi,Zj,2])
+        rate = Lbd[Zi,Zj,2]
+        if (i == 0): rate = 10
+        if (j == n_nodes - 1): rate = 0.01
+        A[i,j,2] = np.random.poisson(rate)
         A[j,i,2] = A[i,j,2]
-        
+
 # Fourth segment: emerging Hub (2) 
-Lbd[0,0,3] =0.0
-Lbd[0,1,3] = 0.01
-Lbd[1,0,3] = 0.01
+Lbd =  low_rate * np.ones(shape = (n_clusters, n_clusters, n_segments))
 Z = np.repeat(1,n_nodes)
-Z[5] = 0           
 for i in  range(n_nodes-1):
     for j in range(i+1, n_nodes):       
         Zi = Z[i]
         Zj = Z[j]
-        A[i,j,3] = np.random.poisson(Lbd[Zi,Zj,3])
+        rate = Lbd[Zi,Zj,3]
+        if (i == 0): rate = 10
+        if (j == n_nodes - 1): rate = 0.01
+        A[i,j,3] = np.random.poisson(rate)
         A[j,i,3] = A[i,j,3]        
-        
+
 edgelist = np.zeros(shape = (int(np.sum(A,dtype = np.int)/2), 3))
 index = 0
 for segment in range(len(segment_lengths)):
@@ -80,12 +89,7 @@ for segment in range(len(segment_lengths)):
                     index += 1
 
 
-np.savetxt("input/edgelist.csv", edgelist, delimiter = ',')
-np.savetxt("input/cluster_memberships_true.csv", Z, delimiter = ',')
+np.savetxt("./edgelist.csv", edgelist, delimiter = ',')
+# np.savetxt("input/cluster_memberships_true.csv", Z, delimiter = ',')
 
 
-
-
-
-
-        

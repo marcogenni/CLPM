@@ -271,9 +271,9 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
             print('(2) - frame: ', frame)
             plt.figure()
             if times == None:
-                plt.title("Latent Positions at time " + str(round(cps_large[frame],2)), loc = "left")
+                plt.title("Latent Positions at " + str(round(cps_large[frame],2)), loc = "left")
             else:
-                plt.title("Latent Positions at time " + times[frame], loc = "left")
+                plt.title("Latent Positions at " + times[frame], loc = "left")
             if model_type == 'distance':
                 plt.xlim((-pos_limit,pos_limit))
                 plt.ylim((-pos_limit,pos_limit))
@@ -309,9 +309,9 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
                 print('(2) - frame: ', frame)
                 plt.figure()
                 if times == None:
-                    plt.title("Latent Positions at time " + str(round(cps_large[frame],2)), loc = "left")
+                    plt.title("Latent Positions at " + str(round(cps_large[frame],2)), loc = "left")
                 else:
-                    plt.title("Latent Positions at time " + times[frame], loc = "left")
+                    plt.title("Latent Positions at " + times[frame], loc = "left")
                 if model_type == 'distance':
                     plt.xlim((-pos_limit,pos_limit))
                     plt.ylim((-pos_limit,pos_limit))
@@ -346,9 +346,9 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
                 print('(2) - frame: ', frame)
                 plt.figure()
                 if times == None:
-                    plt.title("Latent Positions at time " + str(round(cps_large[frame],2)), loc = "left")
+                    plt.title("Latent Positions at " + str(round(cps_large[frame],2)), loc = "left")
                 else:
-                    plt.title("Latent Positions at time " + times[frame], loc = "left")
+                    plt.title("Latent Positions at " + times[frame], loc = "left")
                 if model_type == 'distance':
                     plt.xlim((-pos_limit,pos_limit))
                     plt.ylim((-pos_limit,pos_limit))
@@ -780,7 +780,12 @@ def ClpmPlot(model_type = 'distance',
             delta = (last - now)/(n_frames-1)
             times = []
             while now < last:
-                times.append(now.strftime('%H:%M:%S'))
+                if delta.days <= 1:
+                    times.append(now.strftime('%H:%M:%S'))
+                elif delta.days>1 and delta.days<5:
+                    times.append(now.strftime('%Y/%m/%d %H:%M:%S'))
+                else:
+                    times.append('%Y/%m/%d')
                 now += delta
     
     clpm_animation(outvid, 
@@ -931,8 +936,14 @@ def ClpmSnap(extraction_times,
             delta = (last - now)/(n_frames-1)
             times = []
             while now < last:
-                times.append(now.strftime('%H:%M:%S'))
+                if delta.days <= 1:
+                    times.append(now.strftime('%H:%M:%S'))
+                elif delta.days>1 and delta.days<5:
+                    times.append(now.strftime('%Y/%m/%d %H:%M:%S'))
+                else:
+                    times.append('%Y/%m/%d')
                 now += delta
+    
                 
     create_snaps(Z, 
                  changepoints, 

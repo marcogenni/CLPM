@@ -271,9 +271,9 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
             print('(2) - frame: ', frame)
             plt.figure()
             if times == None:
-                plt.title("Latent Positions at " + str(round(cps_large[frame],2)), loc = "left")
+                plt.title("Latent positions at " + str(round(cps_large[frame],2)), loc = "left")
             else:
-                plt.title("Latent Positions at " + times[frame], loc = "left")
+                plt.title("Latent positions at " + times[frame], loc = "left")
             if model_type == 'distance':
                 plt.xlim((-pos_limit,pos_limit))
                 plt.ylim((-pos_limit,pos_limit))
@@ -309,9 +309,9 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
                 print('(2) - frame: ', frame)
                 plt.figure()
                 if times == None:
-                    plt.title("Latent Positions at " + str(round(cps_large[frame],2)), loc = "left")
+                    plt.title("Latent positions at " + str(round(cps_large[frame],2)), loc = "left")
                 else:
-                    plt.title("Latent Positions at " + times[frame], loc = "left")
+                    plt.title("Latent positions at " + times[frame], loc = "left")
                 if model_type == 'distance':
                     plt.xlim((-pos_limit,pos_limit))
                     plt.ylim((-pos_limit,pos_limit))
@@ -346,9 +346,9 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
                 print('(2) - frame: ', frame)
                 plt.figure()
                 if times == None:
-                    plt.title("Latent Positions at " + str(round(cps_large[frame],2)), loc = "left")
+                    plt.title("Latent positions at " + str(round(cps_large[frame],2)), loc = "left")
                 else:
-                    plt.title("Latent Positions at " + times[frame], loc = "left")
+                    plt.title("Latent positions at " + times[frame], loc = "left")
                 if model_type == 'distance':
                     plt.xlim((-pos_limit,pos_limit))
                     plt.ylim((-pos_limit,pos_limit))

@@ -218,7 +218,7 @@ def fade_node_sizes(dataset, bending = 1):
     sizes /= sizes.max()
     return sizes
 
-def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_type, dpi = 100, times = None, nodes_to_track = None, frames_to_extract = None):
+def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_type, dpi = 100, times = None, nodes_to_track = None, frames_to_extract = None, filenames = None):
     """
     Creates a sequence of images that will compose the video.
     @param      Z               the latent positions from the output of the fitting algorithm
@@ -231,6 +231,7 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
     @param      times           optional time labels (dates) to plot in the title of each snap
     @param      nodes_to_track  a list of up to three integers corresponding to nodes to track with a special color
     @param      frames_to_extract a list containing either float numbers of dates corresponding to the frames to extrace
+    @filenames  an optional list of strings containing the names for the snapshots to save
     @return                     a list of strings indicating the path to the images that must be collated in the video
     """
     if nodes_to_track is not None:
@@ -303,7 +304,8 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
         if type(frames_to_extract[0]) == float:
             match = np.isin(np.round(cps_large,2), frames_to_extract)
             pos_ = np.where(match==True)[0]
-            for frame in pos_:
+            for frame_idx in range(len(pos_)):
+                frame = pos_[frame_idx]
                 print('(2) - frame: ', frame)
                 plt.figure()
                 if times == None:
@@ -329,14 +331,18 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
 #                        if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = its_color)
 #                        if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = its_color)
                         plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
-                        
-                plt.savefig('results_'+model_type+'/extracted_snaps/snap_'+str(frame)+'.png', dpi = dpi)
+                
+                if filenames is None:       
+                    plt.savefig('results_'+model_type+'/extracted_snaps/snap_'+str(frame)+'.png', dpi = dpi)
+                else:
+                    plt.savefig('results_'+model_type+'/extracted_snaps/'+filenames[frame_idx])
                 plt.close()
         elif type(frames_to_extract[0]) == str:
             match = np.isin(times, frames_to_extract)
             pos_ = np.where(match==True)[0]
             print(pos_)
-            for frame in pos_:
+            for frame_idx in range(len(pos_)):
+                frame = pos_[frame_idx]
                 print('(2) - frame: ', frame)
                 plt.figure()
                 if times == None:
@@ -362,9 +368,12 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
 #                        if frame >= 2: plt.plot([pos[idi,0,frame-2], pos[idi,0,frame-1]], [pos[idi,1,frame-2], pos[idi,1,frame-1]], 'k-', alpha = 0.4, color = its_color)
 #                        if frame >= 1: plt.plot([pos[idi,0,frame-1], pos[idi,0,frame-0]], [pos[idi,1,frame-1], pos[idi,1,frame-0]], 'k-', alpha = 0.8, color = its_color)
                         plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
-                        
-                plt.savefig('results_'+model_type+'/extracted_snaps/snap_'+str(frame)+'.png', dpi = dpi)
-                plt.close()                
+                
+                if filenames is None:    
+                    plt.savefig('results_'+model_type+'/extracted_snaps/snap_'+str(frame)+'.png', dpi = dpi)
+                else:
+                    plt.savefig('results_'+model_type+'/extracted_snaps/'+filenames[frame_idx])                   
+                plt.close()    
         else:
             print('Fatal error: unrecognized type for "frames_to_extract"!!')
     
@@ -791,6 +800,7 @@ def ClpmPlot(model_type = 'distance',
 
 # To "extract" (not really...) a frame from the video 
 def ClpmSnap(extraction_times,
+             filenames = None,
              model_type = 'distance',
              dpi = 250,
              period = 1,
@@ -812,6 +822,7 @@ def ClpmSnap(extraction_times,
     Parameters
     ----------
     extraction_times: either a float list or a string list corresponding to the snap to extract (e.g. [9.15, 10.40] oppure ['08:10:00', '09:20:00'])
+    filenames: optional list of strings containing the filenames to save for the extracted snaps
     model_type : Either 'distance' or 'projection'. The default is 'projection'.
     dpi : The resolution of the exported image. The default is 250.
     period : Time it takes on video to progress from one changepoint to the next. The default is 1.
@@ -840,6 +851,10 @@ def ClpmSnap(extraction_times,
     ######################################################
     ## looks for existing directories and prepare them ##
     ######################################################
+    
+    if filenames is not None:
+        if len(filenames)!=len(extraction_times):
+            print('Fatal error: file_names must either be None or contain as many strings as the entries of extraction_times', sys.stderr)
     
     list_files = os.listdir()
     
@@ -928,7 +943,8 @@ def ClpmSnap(extraction_times,
                  dpi,
                  times, 
                  nodes_to_track,
-                 frames_to_extract = extraction_times)            
+                 frames_to_extract = extraction_times,
+                 filenames = filenames)            
     
     
     # clpm_animation(outvid, 

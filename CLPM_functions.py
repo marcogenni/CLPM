@@ -653,7 +653,8 @@ def ClpmPlot(model_type = 'distance',
              n_hubs = 2,
              n_sub_nodes = 100,
              start_date = None,
-             end_date = None
+             end_date = None,
+             time_format = '%Y/%m/%d %H:%M:%S'
         ):
     '''
     
@@ -780,12 +781,7 @@ def ClpmPlot(model_type = 'distance',
             delta = (last - now)/(n_frames-1)
             times = []
             while now < last:
-                if delta.days <= 1:
-                    times.append(now.strftime('%H:%M:%S'))
-                elif delta.days>1 and delta.days<5:
-                    times.append(now.strftime('%Y/%m/%d %H:%M:%S'))
-                else:
-                    times.append('%Y/%m/%d')
+                times.append(now.strftime(time_format))
                 now += delta
     
     clpm_animation(outvid, 
@@ -819,7 +815,8 @@ def ClpmSnap(extraction_times,
              n_hubs = 2,
              n_sub_nodes = 100,
              start_date = None,
-             end_date = None
+             end_date = None,
+             time_format = '%Y/%m/%d %H:%M:%S'
         ):
     '''
     
@@ -936,12 +933,7 @@ def ClpmSnap(extraction_times,
             delta = (last - now)/(n_frames-1)
             times = []
             while now < last:
-                if delta.days <= 1:
-                    times.append(now.strftime('%H:%M:%S'))
-                elif delta.days>1 and delta.days<5:
-                    times.append(now.strftime('%Y/%m/%d %H:%M:%S'))
-                else:
-                    times.append('%Y/%m/%d')
+                times.append(now.strftime(time_format))
                 now += delta
     
                 

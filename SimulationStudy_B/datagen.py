@@ -11,11 +11,11 @@ import numpy as np
 
 np.random.seed(12345)
 
-n_nodes = 8
+n_nodes = 20
 space_limit = 1
 beta = 5
-n_changepoints_per_phase = 10
-phase_time_length = 2
+n_changepoints_per_phase = 20
+phase_time_length = 5
 time_changepoints = np.linspace(start = 0, stop = 2*phase_time_length, num = 2*n_changepoints_per_phase)
 time_segment_length = time_changepoints[1] - time_changepoints[0]
 distances_at_changes = np.zeros((n_nodes, n_nodes, 2*n_changepoints_per_phase))
@@ -60,6 +60,6 @@ for i in range(n_nodes):
                         edgelist[index, 2] = j
                         index += 1
 
-np.savetxt("input/edgelist.csv", edgelist, delimiter = ',')
+np.savetxt("./edgelist.csv", edgelist, delimiter = ',')
 
 

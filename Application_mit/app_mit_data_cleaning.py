@@ -30,7 +30,7 @@ edgelist = edgelist[["timestamp", "sender", "receiver"]]
 
 edgelist = edgelist[edgelist.timestamp < 10]
 
-edgelist.to_csv("input/edgelist.csv", index = False, header = True)
+edgelist.to_csv("./edgelist.csv", index = False, header = True)
 
 edgelist.iloc[:,1].min()
 edgelist.iloc[:,1].max()

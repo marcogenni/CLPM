@@ -916,8 +916,8 @@ def ClpmSnap(extraction_times,
     
     ###************************************************************
     # outvid = folder + 'results_'+model_type+'/video.mp4'
-    node_colors = fade_node_colors(dataset, Z, bending = .6)
-    node_sizes = fade_node_sizes(dataset, bending = .6)
+    node_colors = fade_node_colors(dataset, Z, bending = .5)
+    node_sizes = fade_node_sizes(dataset, bending = .5)
     ###************************************************************
     times = None
     if start_date is not None:

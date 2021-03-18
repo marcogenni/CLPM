@@ -43,12 +43,16 @@ class MDataset(Dataset):
 def projection_model_negloglike(dataset, Z_in, penalty, device = "cpu"):
     # Make sure that we are dealing with nonnegative values only
     Z = Z_in**2
-    
     # Prior contribution, this roughly corresponds to a gaussian prior on the initial positions and increments - you can think of this as a penalisation term
-    prior = 0
-    prior += penalty* torch.sum(Z[:,:,0]**2)
-    prior += penalty * torch.sum((Z[:,:,1:(dataset.n_changepoints)] - Z[:,:,0:(dataset.n_changepoints-1)])**2)
-    
+    prior = 0.
+    # prior += penalty* torch.sum(Z[:,:,0]**2)
+    # prior += penalty * torch.sum((Z[:,:,1:(dataset.n_changepoints)] - Z[:,:,0:(dataset.n_changepoints-1)])**2)
+    norm_Z = torch.sqrt(torch.sum(Z**2,1))
+    norm_Z = norm_Z.unsqueeze(1)
+    norm_Z = norm_Z.expand_as(Z)
+    scaled_Z = Z/norm_Z
+    prior += penalty*torch.sum((torch.sum(scaled_Z[:,:,1:dataset.n_changepoints]*scaled_Z[:,:,:-1],1) - 1.)**2)
+
     # This evaluates the poisson logrates at the timestamps when each of the interactions happen
     kappa = (dataset.timestamps // dataset.segment_length).long()
     deltas = (dataset.timestamps / dataset.segment_length - kappa).squeeze()

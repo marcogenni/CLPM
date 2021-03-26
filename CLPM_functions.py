@@ -42,7 +42,7 @@ class MDataset(Dataset):
 
 def projection_model_negloglike(dataset, Z_in, penalty, device = "cpu"):
     # Make sure that we are dealing with nonnegative values only
-    Z = Z_in**2
+    Z = torch.exp(Z_in) #Z_in**2
     # Prior contribution, this roughly corresponds to a gaussian prior on the initial positions and increments - you can think of this as a penalisation term
     prior = 0.
     # prior += penalty* torch.sum(Z[:,:,0]**2)
@@ -761,7 +761,7 @@ def ClpmPlot(model_type = 'distance',
     dataset = MDataset(timestamps, interactions, changepoints, transform = True)
     
     if model_type == 'projection':
-        Z = Z**2
+        Z = torch.exp(Z) #Z = Z**2
     
     # times
     from datetime import datetime
@@ -913,7 +913,7 @@ def ClpmSnap(extraction_times,
     dataset = MDataset(timestamps, interactions, changepoints, transform = True)
     
     if model_type == 'projection':
-        Z = Z**2
+        Z = torch.exp(Z) #Z = Z**2
     
     # times
     from datetime import datetime

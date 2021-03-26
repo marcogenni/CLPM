@@ -1,2 +1,4 @@
 # CLPM
-A dynamic version of LPM
+## A time-continuous Latent Position Model for instantaneous interaction data
+
+Check out the Wiki!

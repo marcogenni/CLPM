@@ -376,7 +376,7 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
                 if filenames is None:    
                     plt.savefig('results_'+model_type+'/extracted_snaps/snap_'+str(frame)+'.png', dpi = dpi)
                 else:
-                    plt.savefig('results_'+model_type+'/extracted_snaps/'+filenames[frame_idx])                   
+                    plt.savefig('results_'+model_type+'/extracted_snaps/'+filenames[frame_idx], dpi = dpi)                   
                 plt.close()    
         else:
             print('Fatal error: unrecognized type for "frames_to_extract"!!')

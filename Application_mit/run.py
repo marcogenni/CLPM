@@ -20,6 +20,8 @@ snapshot_times = ['2004/10/02',
                   '2005/02/23', 
                   '2005/04/10']
 
+fnames = ['app_mit_dist_'+ str(idx) +'.pdf' for idx in range(len(snapshot_times))]                  
+
 
 ClpmFit(epochs = epochs, 
         n_changepoints = n_changepoints, 
@@ -51,7 +53,7 @@ ClpmFit(epochs = epochs,
         penalty = 10.,
         lr_Z = 1e-4, 
         lr_beta = 1e-7, 
-        device = 'cpu')
+        device = 'cuda')
 
 ClpmPlot(model_type = 'distance',
          dpi = 250,
@@ -71,6 +73,7 @@ ClpmPlot(model_type = 'distance',
 
 ClpmSnap(model_type = 'distance',
          extraction_times=snapshot_times,
+         # filenames=fnames,
          dpi = 250,
          period = period,
          size = (1200,900),

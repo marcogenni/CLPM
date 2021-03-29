@@ -20,7 +20,7 @@ snapshot_times = ['2009/06/29 09:21:19',
                   '2009/06/29 20:44:01'
                    ]
 
-fnames = ['app_acm_dist_' + str(idx) + '.png' for idx in range(1,9)]                  
+fnames = ['app_acm_dist_' + str(idx) + '.pdf' for idx in range(1,9)]                  
 
 
 ClpmPlot(model_type = 'distance',

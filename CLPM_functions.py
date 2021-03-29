@@ -337,7 +337,7 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
                         plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
                 
                 if filenames is None:       
-                    plt.savefig('results_'+model_type+'/extracted_snaps/snap_'+str(frame)+'.png', dpi = dpi)
+                    plt.savefig('results_'+model_type+'/extracted_snaps/snap_'+str(frame)+'.pdf', dpi = dpi)
                 else:
                     plt.savefig('results_'+model_type+'/extracted_snaps/'+filenames[frame_idx])
                 plt.close()
@@ -374,7 +374,7 @@ def create_snaps(Z, changepoints, frames_btw, node_colors, node_sizes, model_typ
                         plt.plot(pos[idi,0,frame], pos[idi,1,frame], 'bo', color = 'blue', markersize = 1 + sizes_large[idi,frame] * 8, markeredgewidth = 0.2, alpha = 1, markerfacecolor= its_color)
                 
                 if filenames is None:    
-                    plt.savefig('results_'+model_type+'/extracted_snaps/snap_'+str(frame)+'.png', dpi = dpi)
+                    plt.savefig('results_'+model_type+'/extracted_snaps/snap_'+str(frame)+'.pdf', dpi = dpi)
                 else:
                     plt.savefig('results_'+model_type+'/extracted_snaps/'+filenames[frame_idx], dpi = dpi)                   
                 plt.close()    

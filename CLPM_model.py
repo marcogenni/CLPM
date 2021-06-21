@@ -9,7 +9,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 from torch.distributions.normal import Normal
-RV = Normal(0, 1)
+RV = Normal(0,1)
 
 
 class ModelCLPM(torch.nn.Module):
@@ -122,7 +122,7 @@ class ModelCLPM(torch.nn.Module):
         """
         bs = len(nodes)
         fs = len(dataset)
-        
+        print("Batch size: "+str(bs)+" Full size: "+str(fs))
         timestamps, senders, receivers = dataset[nodes]
         n_entries = len(timestamps)
         if n_entries <= 1:

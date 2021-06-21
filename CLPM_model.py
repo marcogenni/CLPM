@@ -120,6 +120,9 @@ class ModelCLPM(torch.nn.Module):
         """
         Objective function for the distance CLPM - this corresponds to the negative penalized log-likelihood of the model
         """
+        bs = len(nodes)
+        fs = len(dataset)
+        
         timestamps, senders, receivers = dataset[nodes]
         n_entries = len(timestamps)
         if n_entries <= 1:
@@ -173,7 +176,7 @@ class ModelCLPM(torch.nn.Module):
             sigma = torch.sqrt(1 / (2 * S_vec))
             S = torch.exp(-(D_vec - S_vec * (mu ** 2))) * sigma * (RV.cdf((1 - mu) / sigma) - RV.cdf((0 - mu) / sigma)) * (tau_new - tau_cur)
             integral += S.sum()
-        return prior - self.beta * len(nodes) - torch.sum(first_likelihood_term) + torch.sqrt(2 * torch.tensor([math.pi], dtype=torch.float64)) * torch.exp(self.beta) * integral
+        return fs/bs*(prior - self.beta * n_entries - torch.sum(first_likelihood_term) + torch.sqrt(2 * torch.tensor([math.pi], dtype=torch.float64)) * torch.exp(self.beta) * integral)
 
     def fit(self, dataset, n_epochs, batch_size, lr_z=1e-3, lr_beta=1e-7):
         """

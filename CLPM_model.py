@@ -32,6 +32,7 @@ class ModelCLPM(torch.nn.Module):
         self.lr_z = 0
         self.lr_beta = 0
         self.loss_values = torch.zeros(1, dtype=torch.float64)
+        # self.loss_values_debug = torch.zeros(1, dtype=torch.float64)         # DEBUG
 
         if model_type != 'distance' and model_type != 'projection':
             quit('ERROR: model_type is not supported')
@@ -206,6 +207,7 @@ class ModelCLPM(torch.nn.Module):
 
         # Optimization
         self.loss_values = torch.zeros(n_epochs, dtype=torch.float64)
+        # self.loss_values_debug = torch.zeros(n_epochs, dtype=torch.float64)         # DEBUG
         start_time = time.time()
         if self.verbose is True:
             print('\nStochastic gradient descent starting now:')
@@ -224,6 +226,7 @@ class ModelCLPM(torch.nn.Module):
                 if self.verbose is True:
                     print(f'Elapsed seconds: {time.time()-start_time:.2f} \t\t Epoch: {epoch+1:>d} \t\t Batch: {current_index+batch:>d}/{len(dataset):>d} \t\t Loss: {self.loss_values[epoch]:>.4f}')
                 current_index += batch
+            # self.loss_values_debug[epoch] = self.loss(dataset, nodes_ordering).item()  # DEBUG
         print('\nOptimization has now finished.')
         print(f'\nThe optimal objective function value (based on the full dataset) is {self.loss(dataset, list(range(0,len(dataset)))).item():.4f}')
 
@@ -245,6 +248,9 @@ class ModelCLPM(torch.nn.Module):
             os.mkdir('results_distance/snaps')
             plt.figure()
         plt.plot(self.loss_values)
+        # plt.plot(self.loss_values_debug)         # DEBUG
+        # plt.plot(self.loss_values * (0.5 * self.Z.shape[0] * (self.Z.shape[0] - 1)) / (0.5 * self.batch_size * (self.batch_size - 1)))
+        # plt.plot(self.loss_values * self.Z.shape[0] / self.batch_size)
         plt.savefig(path + 'output_' + self.model_type + '/loss.pdf')
         plt.close()
 

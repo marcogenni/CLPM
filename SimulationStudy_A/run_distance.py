@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-
 import numpy as np
 import pandas as pd
 import torch
@@ -24,9 +22,9 @@ model_type = 'distance'
 penalty = 30.
 model = ModelCLPM(network, n_change_points, model_type, penalty, verbose)
 
-n_epochs = 500
+n_epochs = 100
 batch_size = 8
-lr_z = 1e-3
+lr_z = 1e-4
 lr_beta = 1e-7
 model.fit(network, n_epochs, batch_size, lr_z, lr_beta)
 

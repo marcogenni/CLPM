@@ -146,36 +146,104 @@ class ModelCLPM(torch.nn.Module):
         first_likelihood_term += 2 * deltas * one_minus_deltas * (
                     torch.sum(Z_sender_cur * Z_receiv_new, 1) + torch.sum(Z_sender_new * Z_receiv_cur, 1) - torch.sum(Z_sender_cur * Z_sender_new, 1) - torch.sum(Z_receiv_cur * Z_receiv_new, 1))
         first_likelihood_term += deltas ** 2 * (2 * torch.sum(Z_sender_new * Z_receiv_new, 1) - torch.sum(Z_sender_new * Z_sender_new, 1) - torch.sum(Z_receiv_new * Z_receiv_new, 1))
+        #print("first ll term: ",torch.sum(first_likelihood_term))
+        
+#########################################
+##############  First version ###########
+#########################################
+        # Integral of the rate function
+        # integral = 0.
 
+        # for k in list(range(self.n_change_points)[0:(self.n_change_points - 1)]):
+        #     tau_cur = self.change_points[k]
+        #     tau_new = self.change_points[k + 1]
+        #     Z_cur = self.Z[nodes, :, k]
+        #     Z_new = self.Z[nodes, :, k + 1]
+        #     tZ1 = torch.sum(Z_cur ** 2, 1)
+        #     tZ2 = tZ1.expand(tZ1.shape[0], tZ1.shape[0])
+        #     tZ1 = tZ2.transpose(0, 1)
+        #     D = tZ1 + tZ2 - 2 * torch.mm(Z_cur, Z_cur.transpose(0, 1))  # its element (i,j) is || z_i - z_j ||_2^2
+        #     N = len(D)
+        #     D_vec = D[torch.triu(torch.ones(N, N), 1) == 1]
+        #     DZ = Z_new - Z_cur  # This is \Delta
+        #     tDZ1 = torch.sum(DZ ** 2, 1)
+        #     tDZ2 = tDZ1.expand(tDZ1.shape[0], tDZ1.shape[0])
+        #     tDZ1 = tDZ2.transpose(0, 1)
+        #     S = tDZ1 + tDZ2 - 2 * torch.mm(DZ, DZ.transpose(0, 1))  # its element  (i,j) is || \Delta_i - \Delta_j ||_2^2
+        #     S_vec = S[torch.triu(torch.ones(N, N), 1) == 1]
+        #     tA = torch.sum((DZ * Z_cur), 1)
+        #     tB = tA.expand(tA.shape[0], tA.shape[0])
+        #     tA = tB.transpose(0, 1)
+        #     C = torch.mm(DZ, Z_cur.transpose(0, 1)) + torch.mm(Z_cur, DZ.transpose(0, 1)) - tA - tB
+        #     C_vec = C[torch.triu(torch.ones(N, N), 1) == 1]
+        #     mu = (1 / S_vec) * (C_vec)
+        #     sigma = torch.sqrt(1 / (2 * S_vec))
+        #     S = torch.exp(-(D_vec - S_vec * (mu ** 2))) * sigma * (RV.cdf((1 - mu) / sigma) - RV.cdf((0 - mu) / sigma)) * (tau_new - tau_cur)
+        #     integral += S.sum()
+            
+###############################################
+##############  Second version (MB) ###########
+###############################################
         # Integral of the rate function
         integral = 0.
-
+        
+        senders = torch.unique(senders)
+        receivers = torch.arange(fs)
         for k in list(range(self.n_change_points)[0:(self.n_change_points - 1)]):
             tau_cur = self.change_points[k]
-            tau_new = self.change_points[k + 1]
-            Z_cur = self.Z[nodes, :, k]
-            Z_new = self.Z[nodes, :, k + 1]
-            tZ1 = torch.sum(Z_cur ** 2, 1)
-            tZ2 = tZ1.expand(tZ1.shape[0], tZ1.shape[0])
-            tZ1 = tZ2.transpose(0, 1)
-            D = tZ1 + tZ2 - 2 * torch.mm(Z_cur, Z_cur.transpose(0, 1))  # its element (i,j) is || z_i - z_j ||_2^2
-            N = len(D)
-            D_vec = D[torch.triu(torch.ones(N, N), 1) == 1]
-            DZ = Z_new - Z_cur  # This is \Delta
-            tDZ1 = torch.sum(DZ ** 2, 1)
-            tDZ2 = tDZ1.expand(tDZ1.shape[0], tDZ1.shape[0])
-            tDZ1 = tDZ2.transpose(0, 1)
-            S = tDZ1 + tDZ2 - 2 * torch.mm(DZ, DZ.transpose(0, 1))  # its element  (i,j) is || \Delta_i - \Delta_j ||_2^2
-            S_vec = S[torch.triu(torch.ones(N, N), 1) == 1]
-            tA = torch.sum((DZ * Z_cur), 1)
-            tB = tA.expand(tA.shape[0], tA.shape[0])
-            tA = tB.transpose(0, 1)
-            C = torch.mm(DZ, Z_cur.transpose(0, 1)) + torch.mm(Z_cur, DZ.transpose(0, 1)) - tA - tB
-            C_vec = C[torch.triu(torch.ones(N, N), 1) == 1]
+            tau_new = self.change_points[k+1]
+            Z_senders_cur = self.Z[senders, :, k]
+            Z_receivers_cur = self.Z[receivers, :, k]
+            Z_senders_new = self.Z[senders, :, k + 1]
+            Z_receivers_new = self.Z[receivers, :, k + 1]
+            tZ1 = torch.sum(Z_senders_cur ** 2, 1).reshape(-1,1)
+            tZ1 = tZ1.expand(tZ1.shape[0], len(receivers))
+            #print("tZ1 shape: ", tZ1.shape)
+            tZ2 = torch.sum(Z_receivers_cur**2, 1).reshape(-1,1)
+            tZ2 = tZ2.expand(tZ2.shape[0], len(senders))
+            tZ2 = tZ2.transpose(0, 1)            
+            #print("tZ2 shape: ", tZ2.shape)
+            D = tZ1 + tZ2 - 2 * torch.mm(Z_senders_cur, Z_receivers_cur.transpose(0, 1))  # its element (i,j) is || z_i - z_j ||_2^2
+            D_vec = D.flatten()
+            zero_out_D = [D_vec>0.]
+            D_vec = D_vec[zero_out_D]
+            #print("Guarda qui: ", D_vec)
+            
+            DZ_senders = Z_senders_new - Z_senders_cur  # This is \Delta (senders)
+            DZ_receivers = Z_receivers_new - Z_receivers_cur  # This is \Delta (receivers)            
+            tDZ1 = torch.sum(DZ_senders ** 2, 1).reshape(-1,1)
+            tDZ1 = tDZ1.expand(tDZ1.shape[0], len(receivers))
+            tDZ2 = torch.sum(DZ_receivers ** 2, 1).reshape(-1,1)
+            tDZ2 = tDZ2.expand(tDZ2.shape[0], len(senders))
+            tDZ2 = tDZ2.transpose(0, 1)
+            S = tDZ1 + tDZ2 - 2 * torch.mm(DZ_senders, DZ_receivers.transpose(0, 1))  # its element  (i,j) is || \Delta_i - \Delta_j ||_2^2
+            
+            S_vec = S.flatten()
+            S_vec = S_vec[zero_out_D]
+            zero_out_S = [S_vec>0.]
+            D_vec = D_vec[zero_out_S]
+            S_vec = S_vec[zero_out_S]
+            
+            #print("E poi qui: ", S_vec)
+            tA = torch.sum((DZ_senders * Z_senders_cur), 1).reshape(-1,1)
+            tA = tA.expand(tA.shape[0], len(receivers))            
+            tB = torch.sum(DZ_receivers * Z_receivers_cur, 1).reshape(-1,1)
+            tB = tB.expand(tB.shape[0], len(senders))
+            tB = tB.transpose(0, 1)
+            C = torch.mm(DZ_senders, Z_receivers_cur.transpose(0, 1)) + torch.mm(Z_senders_cur, DZ_receivers.transpose(0, 1)) - tA - tB
+            
+            C_vec = C.flatten()
+            C_vec = C_vec[zero_out_D]
+            C_vec = C_vec[zero_out_S]
             mu = (1 / S_vec) * (C_vec)
             sigma = torch.sqrt(1 / (2 * S_vec))
             S = torch.exp(-(D_vec - S_vec * (mu ** 2))) * sigma * (RV.cdf((1 - mu) / sigma) - RV.cdf((0 - mu) / sigma)) * (tau_new - tau_cur)
-            integral += S.sum()
+            integral += .5*S.sum()          
+            
+############################
+############################     
+        #print("test S: ", S_vec[S_vec<0.])       
+        #print("integral value: ", integral)   
         return fs/bs*(prior - self.beta * n_entries - torch.sum(first_likelihood_term) + torch.sqrt(2 * torch.tensor([math.pi], dtype=torch.float64)) * torch.exp(self.beta) * integral)
 
     def fit(self, dataset, n_epochs, batch_size, lr_z=1e-3, lr_beta=1e-7):

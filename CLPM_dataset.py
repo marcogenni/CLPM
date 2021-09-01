@@ -46,7 +46,7 @@ class NetworkCLPM(Dataset):
         entries = []
         if isinstance(item, list):
             for i in item:
-                for j in item:
+                for j in range(self.n_nodes):#item:
                     if i < j:
                         for entry_position in range(self.n_edges_per_pair[i, j]):
                             entries.append(self.adj_box[i, j, entry_position].item())

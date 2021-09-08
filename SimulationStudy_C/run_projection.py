@@ -24,8 +24,8 @@ model_type = 'projection'
 penalty = 250.
 model = ModelCLPM(network, n_change_points, model_type, penalty, verbose)
 
-n_epochs = 2000
-batch_size = 60
+n_epochs = 100
+batch_size = 6
 lr_z = 1e-4
 lr_beta = 1e-7
 model.fit(network, n_epochs, batch_size, lr_z, lr_beta)
@@ -33,7 +33,7 @@ model.fit(network, n_epochs, batch_size, lr_z, lr_beta)
 model.export()
 
 period = 1.5
-frames_btw = 60
+frames_btw = 6
 ClpmPlot(model_type=model_type,
          dpi=250,
          period=period,

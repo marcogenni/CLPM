@@ -71,6 +71,8 @@ class ModelCLPM(torch.nn.Module):
         """
         Objective function for the projection CLPM - this corresponds to the negative penalized log-likelihood of the model
         """
+        bs = len(nodes)
+        fs = len(dataset)
         timestamps, senders, receivers = dataset[nodes]
         n_entries = len(timestamps)
         if n_entries <= 1:
@@ -82,7 +84,7 @@ class ModelCLPM(torch.nn.Module):
         norm_Z = norm_Z.unsqueeze(1)
         norm_Z = norm_Z.expand_as(Z)
         scaled_Z = Z / norm_Z
-        prior += self.penalty * torch.mean((Z[nodes, :, 1:self.n_change_points] - Z[nodes, :, :-1]) ** 2)
+        #prior += self.penalty * torch.mean((Z[nodes, :, 1:self.n_change_points] - Z[nodes, :, :-1]) ** 2)
         prior += self.penalty * torch.sum((torch.sum(scaled_Z[nodes, :, 1:self.n_change_points] * scaled_Z[nodes, :, :-1], 1) - 1.) ** 2)
         # prior = 0
         # prior += self.penalty * torch.sum(self.Z[nodes, :, 0] ** 2)
@@ -103,19 +105,42 @@ class ModelCLPM(torch.nn.Module):
         first_likelihood_term += deltas ** 2 * torch.sum(Z_sender_new * Z_receiv_new, 1)
 
         # This evaluates the value of the integral for the rate function, across all pairs of nodes and timeframes
-        integral = 0
+#######################
+#### First Version ####
+#######################        
+        # integral = 0.
+        # for k in list(range(self.n_change_points)[0:(self.n_change_points-1)]):
+        #     tau_cur = self.change_points[k]
+        #     tau_new = self.change_points[k + 1]
+        #     Z_cur = Z[nodes, :, k]
+        #     Z_new = Z[nodes, :, k + 1]
+        #     Sij00 = (torch.sum(torch.mm(Z_cur, Z_cur.t())) - torch.sum(Z_cur * Z_cur)) / 6
+        #     Sij11 = (torch.sum(torch.mm(Z_new, Z_new.t())) - torch.sum(Z_new * Z_new)) / 6
+        #     Sij01 = (torch.sum(torch.mm(Z_cur, Z_new.t())) - torch.sum(Z_cur * Z_new)) / 12
+        #     Sij10 = (torch.sum(torch.mm(Z_new, Z_cur.t())) - torch.sum(Z_new * Z_cur)) / 12
+        #     integral += (tau_new - tau_cur) * (Sij00 + Sij11 + Sij01 + Sij10)
+
+        # return prior - torch.sum(torch.log(first_likelihood_term)) + integral
+##########################
+#### New Version : MB ####
+##########################
+        integral = 0.
+        senders = torch.unique(senders)
+        receivers = torch.arange(fs)
         for k in list(range(self.n_change_points)[0:(self.n_change_points-1)]):
             tau_cur = self.change_points[k]
             tau_new = self.change_points[k + 1]
-            Z_cur = Z[nodes, :, k]
-            Z_new = Z[nodes, :, k + 1]
-            Sij00 = (torch.sum(torch.mm(Z_cur, Z_cur.t())) - torch.sum(Z_cur * Z_cur)) / 6
-            Sij11 = (torch.sum(torch.mm(Z_new, Z_new.t())) - torch.sum(Z_new * Z_new)) / 6
-            Sij01 = (torch.sum(torch.mm(Z_cur, Z_new.t())) - torch.sum(Z_cur * Z_new)) / 12
-            Sij10 = (torch.sum(torch.mm(Z_new, Z_cur.t())) - torch.sum(Z_new * Z_cur)) / 12
+            Z_senders_cur = Z[senders, : , k]
+            Z_receivers_cur = Z[receivers, : , k]
+            Z_senders_new = Z[senders, : , (k+1)]
+            Z_receivers_new = Z[receivers, : , (k+1)]
+            Sij00 = (torch.sum(torch.mm(Z_senders_cur, Z_receivers_cur.t())) - torch.sum(Z_senders_cur * Z_senders_cur)) / 6
+            Sij11 = (torch.sum(torch.mm(Z_senders_new, Z_receivers_new.t())) - torch.sum(Z_senders_new * Z_senders_new)) / 6
+            Sij01 = (torch.sum(torch.mm(Z_senders_cur, Z_receivers_new.t())) - torch.sum(Z_senders_cur * Z_senders_new)) / 12 
+            Sij10 = (torch.sum(torch.mm(Z_senders_new, Z_receivers_cur.t())) - torch.sum(Z_senders_new * Z_senders_cur)) / 12            
             integral += (tau_new - tau_cur) * (Sij00 + Sij11 + Sij01 + Sij10)
 
-        return prior - torch.sum(torch.log(first_likelihood_term)) + integral
+        return fs/bs*(prior - torch.sum(torch.log(first_likelihood_term)) + integral)            
 
     def distance_model_negloglike(self, dataset, nodes):
         """

@@ -264,7 +264,7 @@ class ModelCLPM(torch.nn.Module):
             mu = (1 / S_vec) * (C_vec)
             sigma = torch.sqrt(1 / (2 * S_vec))
             S = torch.exp(-(D_vec - S_vec * (mu ** 2))) * sigma * (RV.cdf((1 - mu) / sigma) - RV.cdf((0 - mu) / sigma)) * (tau_new - tau_cur)
-            integral += .5*S.sum()          
+            integral += .5*(S.sum()) # - bs*(tau_new - tau_cur)) # il secondo termine è per togliere i self-loops
             
 ############################
 ############################     

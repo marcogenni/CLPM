@@ -22,8 +22,8 @@ model_type = 'distance'
 penalty = 30.
 model = ModelCLPM(network, n_change_points, model_type, penalty, verbose)
 
-n_epochs = 100
-batch_size = 8
+n_epochs = 150
+batch_size = 6
 lr_z = 1e-4
 lr_beta = 1e-7
 model.fit(network, n_epochs, batch_size, lr_z, lr_beta)

@@ -14,44 +14,63 @@ from CLPM_plot import *
 np.random.seed(12345)
 torch.manual_seed(54321)
 
-verbose = True
+verbose = False
 
 if torch.cuda.is_available():
   device = 'cuda'
 else:
   device = 'cpu'
+  
+tot_n_nodes = [30] #, 60, 90, 120, 150, 180]
 
-edge_list = pd.read_csv('edgelist.csv')
-network = NetworkCLPM(edge_list, verbose, device = device)
+store_times = np.zeros(shape=(2,len(tot_n_nodes)))
+store_epochs = np.zeros(len(tot_n_nodes))
 
-n_change_points = 10
-model_type = 'distance'
-penalty = 20.
-model = ModelCLPM(network, n_change_points, model_type, penalty, verbose)
+counter = 0
 
-n_epochs = 50
-batch_size = 3
-lr_z = 1e-4
-lr_beta = 1e-7
-model.fit(network, n_epochs, batch_size, lr_z, lr_beta)
+for n_nodes in tot_n_nodes:
+  
+  print('Working with {} nodes'.format(n_nodes))
+  edge_list = pd.read_csv('edgelist_{}.csv'.format(n_nodes))
+  network = NetworkCLPM(edge_list, verbose, device = device)
+  
+  n_change_points = 10
+  model_type = 'distance'
+  penalty = 20.
+  
+  model = ModelCLPM(network, n_change_points, model_type, penalty, verbose)
+  n_epochs = 100
+  batch_size = n_nodes
+  lr_z = 1e-4
+  lr_beta = 1e-7
+  model.fit(network, n_epochs, batch_size, lr_z, lr_beta)
+  
+  model.export()
+  
+  elapsed_secs = np.genfromtxt('output_distance/elapsed_secs.csv')
+  store_times[0, counter] = elapsed_secs
+    
+  l_value = np.genfromtxt('output_distance/loss_function_values.csv')
+  threshold = l_value[-1]
+  
+  model = ModelCLPM(network, n_change_points, model_type, penalty, verbose)
+  n_epochs = 1000
+  batch_size = 3
+  lr_z = 1e-4
+  lr_beta = 1e-7
+  model.fit(network, n_epochs, batch_size, lr_z, lr_beta, threshold)
+  
+  model.export()
+ 
+  elapsed_secs = np.genfromtxt('output_distance/elapsed_secs.csv')
+  store_times[1,counter] = elapsed_secs
+  
+  actual_epochs = np.genfromtxt('output_distance/n_epochs.csv')
+  store_epochs[counter] = actual_epochs
+  
+  counter += 1
+   
+ 
 
-model.export()
-
-period = 1.5
-frames_btw = 20
-ClpmPlot(model_type=model_type,
-          dpi=250,
-          period=period,
-          size=(1200, 900),
-          is_color=True,
-          formato='mp4v',
-          frames_btw=frames_btw,
-          nodes_to_track=[0],
-          sub_graph=False,
-          type_of='friendship',
-          n_hubs=2,
-          n_sub_nodes=100,
-          start_date=None,
-          end_date=None)
 
 

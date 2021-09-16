@@ -273,7 +273,7 @@ class ModelCLPM(torch.nn.Module):
         #print("integral value: ", integral)   
         return fs/bs*(prior - self.beta * n_entries - torch.sum(first_likelihood_term) + torch.sqrt(2 * torch.tensor([math.pi], dtype=torch.float64, device = self.device)) * torch.exp(self.beta) * integral)
 
-    def fit(self, dataset, n_epochs, batch_size, lr_z=1e-3, lr_beta=1e-7):
+    def fit(self, dataset, n_epochs, batch_size, lr_z=1e-3, lr_beta=1e-7, threshold = None):
         """
         Runs the optimizer
         """
@@ -323,8 +323,14 @@ class ModelCLPM(torch.nn.Module):
                 current_index += batch
             if self.verbose is True:
                 print(f'Elapsed seconds: {time.time()-start_time:.2f} \t\t Epoch: {epoch+1:>d} \t\t Batch: {current_index+batch:>d}/{len(dataset):>d} \t\t Loss: {self.loss_values[epoch]:>.4f}')
-
+            if threshold!=None:
+                if self.loss_values[epoch] < threshold:
+                    # self.elapsed_secs = time.time()-start_time
+                    # self.last_epoch = epoch
+                    break
             # self.loss_values_debug[epoch] = self.loss(dataset, nodes_ordering).item()  # DEBUG
+        self.elapsed_secs = time.time()-start_time
+        self.last_epoch = epoch    
         print('\nOptimization has now finished.')
         print(f'\nThe optimal objective function value (based on the full dataset) is {self.loss(dataset, list(range(0,len(dataset)))).item():.4f}')
 
@@ -369,3 +375,6 @@ class ModelCLPM(torch.nn.Module):
             pd.DataFrame(self.beta.cpu().detach().numpy().reshape(-1,1)).to_csv(path + 'output_' + self.model_type + '/beta.csv', index=False, header=False)
 
         np.savetxt(path + "output_" + self.model_type + "/changepoints.csv", self.change_points.cpu(), delimiter=',')
+        np.savetxt(path + "output_" + self.model_type + "/elapsed_secs.csv", np.array(self.elapsed_secs).reshape(1,), delimiter = ",")
+        np.savetxt(path + "output_" + self.model_type + "/n_epochs.csv", np.array(self.last_epoch).reshape(1,), delimiter = ",")
+

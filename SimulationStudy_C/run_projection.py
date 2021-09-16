@@ -35,18 +35,18 @@ model.export()
 period = 1.5
 frames_btw = 6
 ClpmPlot(model_type=model_type,
-         dpi=250,
-         period=period,
-         size=(1200, 900),
-         is_color=True,
-         formato='mp4v',
-         frames_btw=frames_btw,
-         nodes_to_track=[0],
-         sub_graph=False,
-         type_of='friendship',
-         n_hubs=2,
-         n_sub_nodes=100,
-         start_date=None,
-         end_date=None)
+          dpi=250,
+          period=period,
+          size=(1200, 900),
+          is_color=True,
+          formato='mp4v',
+          frames_btw=frames_btw,
+          nodes_to_track=[0],
+          sub_graph=False,
+          type_of='friendship',
+          n_hubs=2,
+          n_sub_nodes=100,
+          start_date=None,
+          end_date=None)
 
 

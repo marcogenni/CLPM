@@ -24,8 +24,8 @@ model_type = 'distance'
 penalty = 20.
 model = ModelCLPM(network, n_change_points, model_type, penalty, verbose)
 
-n_epochs = 2000
-batch_size = 150
+n_epochs = 1000
+batch_size = 50
 lr_z = 1e-4
 lr_beta = 1e-7
 model.fit(network, n_epochs, batch_size, lr_z, lr_beta)
@@ -34,6 +34,13 @@ model.export()
 
 period = 1
 frames_btw = 60
+thresholds = [0.15, 0.2, 0.25]
+ylim = 10
+start_value = 8
+end_value = 21
+
+clusteredness_index(thresholds, model.Z.detach().numpy(), start_value, end_value, frames_btw, ylim)
+
 ClpmPlot(model_type=model_type,
          dpi=250,
          period=period,

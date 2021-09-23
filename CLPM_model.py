@@ -321,9 +321,9 @@ class ModelCLPM(torch.nn.Module):
                 optimizer.step()
                 self.loss_values[epoch] += 1/len(batch_sizes) * loss.item()
                 current_index += batch
-            if self.verbose is True:
-                print(f'Elapsed seconds: {time.time()-start_time:.2f} \t\t Epoch: {epoch+1:>d} \t\t Batch: {current_index+batch:>d}/{len(dataset):>d} \t\t Loss: {self.loss_values[epoch]:>.4f}')
-            if threshold!=None:
+                if self.verbose is True:
+                    print(f'Elapsed seconds: {time.time()-start_time:.2f} \t\t Epoch: {epoch+1:>d} \t\t Batch: {current_index:>d}/{len(dataset):>d} \t\t Loss: {self.loss_values[epoch]:>.4f}')
+            if threshold is not None:
                 if self.loss_values[epoch] < threshold:
                     # self.elapsed_secs = time.time()-start_time
                     # self.last_epoch = epoch

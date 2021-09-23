@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 import numpy as np
 import torch
 import matplotlib
@@ -527,3 +528,48 @@ def ClpmPlot(model_type='distance',
                    times=times,
                    nodes_to_track=nodes_to_track,
                    model_type=model_type)
+
+
+def clusteredness_index(thresholds, Z, start_value, end_value, frames_btw, ylim=None):
+    """
+    Creates a sequence of images that will compose the video.
+    @param      threshold       threshold value for nearest neighbour mechanism
+    @param      Z               the latent positions from the output of the fitting algorithm
+    @param      frames_btw      the number of additional frames that are inserted inbetween any two changepoints, to make the transitions smoother
+    @return                     saves the average number of neighbours within threshold, for each frame
+    """
+    n_nodes = Z.shape[0]
+    n_dim = Z.shape[1]
+    n_cps = Z.shape[2]
+    n_thresh = len(thresholds)
+    n_frames = frames_btw * (n_cps - 1) + n_cps
+    pos = np.zeros((n_nodes, n_dim, n_frames))
+    pos[:, :, n_frames - 1] = Z[:, :, n_cps - 1]
+    for frame in range(n_frames - 1):
+        cp0 = frame // (frames_btw + 1)
+        cp1 = (frame // (frames_btw + 1)) + 1
+        delta = (frame % (frames_btw + 1)) / (frames_btw + 1)
+        for i in range(n_nodes):
+            pos[i, 0, frame] = (1 - delta) * Z[i, 0, cp0] + delta * Z[i, 0, cp1]
+            pos[i, 1, frame] = (1 - delta) * Z[i, 1, cp0] + delta * Z[i, 1, cp1]
+    counts = np.zeros((n_frames, n_thresh))
+    timing = np.linspace(start_value, end_value, num=n_frames)
+    for frame in range(n_frames):
+        for i in range(n_nodes):
+            for j in range(n_nodes):
+                if i != j:
+                    distance = math.sqrt((pos[i, 0, frame] - pos[j, 0, frame])**2 + (pos[i, 1, frame] - pos[j, 1, frame])**2)
+                    for index in range(len(thresholds)):
+                        if distance <= thresholds[index]:
+                            counts[frame, index] += 1
+    np.savetxt("results_distance/clusteredness.csv", counts/n_nodes, delimiter=',')
+    plt.figure()
+    plt.plot(timing, counts/n_nodes)
+    if ylim is not None:
+        plt.ylim([0,ylim])
+    plt.xlabel("Time")
+    plt.ylabel("Clusteredness")
+    plt.savefig("results_distance/clusteredness.pdf")
+    plt.close()
+
+

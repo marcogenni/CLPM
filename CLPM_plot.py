@@ -530,13 +530,15 @@ def ClpmPlot(model_type='distance',
                    model_type=model_type)
 
 
-def clusteredness_index(thresholds, Z, start_value, end_value, frames_btw, ylim=None):
+def clusteredness_index(thresholds, Z, start_value, end_value, frames_btw):
     """
     Creates a sequence of images that will compose the video.
-    @param      threshold       threshold value for nearest neighbour mechanism
-    @param      Z               the latent positions from the output of the fitting algorithm
-    @param      frames_btw      the number of additional frames that are inserted inbetween any two changepoints, to make the transitions smoother
-    @return                     saves the average number of neighbours within threshold, for each frame
+    @param      thresholds      threshold values for nearest neighbour mechanism (radius of circle around each node)
+    @param      Z               the latent positions from the output of the fitting algorithm for the distance model
+    @param      start_value     plotting parameter: lower bound for the x-axis labels
+    @param      end_value       plotting parameter: upper bound for the x-axis labels
+    @param      frames_btw      defines the number of coordinates that are used to draw the line in the plot, similarly to ClpmPlot()
+    @return                     exports a csv with the average number of neighbours within threshold, for each frame; and a plot of the same values
     """
     n_nodes = Z.shape[0]
     n_dim = Z.shape[1]
@@ -564,11 +566,10 @@ def clusteredness_index(thresholds, Z, start_value, end_value, frames_btw, ylim=
                             counts[frame, index] += 1
     np.savetxt("results_distance/clusteredness.csv", counts/n_nodes, delimiter=',')
     plt.figure()
-    plt.plot(timing, counts/n_nodes)
-    if ylim is not None:
-        plt.ylim([0,ylim])
+    plt.plot(timing[(frames_btw+1):], counts[(frames_btw+1):, :]/n_nodes)
     plt.xlabel("Time")
     plt.ylabel("Clusteredness")
+    plt.legend(thresholds, title='threshold')
     plt.savefig("results_distance/clusteredness.pdf")
     plt.close()
 

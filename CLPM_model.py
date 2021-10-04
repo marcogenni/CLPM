@@ -157,7 +157,7 @@ class ModelCLPM(torch.nn.Module):
 
         # Prior contribution, this roughly corresponds to a gaussian prior on the initial positions and increments - you can think of this as a penalisation term
         prior = 0
-        prior += self.penalty * torch.sum(self.Z[nodes, :, 0] ** 2)
+        # prior += self.penalty * torch.sum(self.Z[nodes, :, 0] ** 2)
         prior += self.penalty * torch.sum((self.Z[nodes, :, 1:self.n_change_points] - self.Z[nodes, :, 0:(self.n_change_points - 1)]) ** 2)
 
         # This evaluates the poisson logrates at the timestamps when each of the interactions happen

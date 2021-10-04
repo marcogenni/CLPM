@@ -18,9 +18,12 @@ class ModelCLPM(torch.nn.Module):
                  n_change_points,
                  model_type='distance',
                  penalty=10.,
-                 verbose=True):
+                 verbose=True,
+                 ):
 
         super().__init__()
+        
+        self.device = dataset.device
         
         self.model_type = model_type
         self.penalty = penalty
@@ -31,7 +34,7 @@ class ModelCLPM(torch.nn.Module):
         self.batch_size = 0
         self.lr_z = 0
         self.lr_beta = 0
-        self.loss_values = torch.zeros(1, dtype=torch.float64)
+        self.loss_values = torch.zeros(1, dtype=torch.float64, device=self.device)
         # self.loss_values_debug = torch.zeros(1, dtype=torch.float64)         # DEBUG
 
         if model_type != 'distance' and model_type != 'projection':
@@ -40,15 +43,13 @@ class ModelCLPM(torch.nn.Module):
         self.time_max = max(dataset.timestamps).item()
         my_step = 1 / n_change_points
         self.change_points = np.arange(start=0.0, stop=1.0 + my_step,  step=my_step) * (self.time_max + 0.0001)
-        self.change_points = torch.tensor(self.change_points, dtype=torch.float64)
+        self.change_points = torch.tensor(self.change_points, dtype=torch.float64, device=self.device)
         self.change_points.reshape(-1, 1)
         self.n_change_points = len(self.change_points)
         self.segment_length = self.change_points[1] - self.change_points[0]
-        self.Z = torch.nn.Parameter(torch.randn((dataset.n_nodes, 2, self.n_change_points), dtype=torch.float64))
-        self.beta = torch.zeros(1, dtype=torch.float64)
+        self.Z = torch.tensor(np.random.normal(size = (dataset.n_nodes, 2, self.n_change_points)), requires_grad = True, dtype=torch.float64, device=self.device)
         if self.model_type == 'distance':
-            self.beta = torch.nn.Parameter(torch.zeros(1, dtype=torch.float64))
-
+            self.beta = torch.tensor(np.random.normal(), requires_grad = True, dtype=torch.float64, device = self.device)
         if self.verbose is True:
             print(f'\nCLPM {self.model_type} model has been successfully initialized\n')
 
@@ -98,32 +99,32 @@ class ModelCLPM(torch.nn.Module):
         Z_sender_new = Z[senders, :, kappa + 1].squeeze()
         Z_receiv_cur = Z[receivers, :, kappa].squeeze()
         Z_receiv_new = Z[receivers, :, kappa + 1].squeeze()
-        first_likelihood_term = torch.zeros(n_entries, dtype=torch.float64)
+        first_likelihood_term = torch.zeros(n_entries, dtype=torch.float64, device = self.device)
         first_likelihood_term += one_minus_deltas ** 2 * torch.sum(Z_sender_cur * Z_receiv_cur, 1)
         first_likelihood_term += deltas * one_minus_deltas * torch.sum(Z_sender_cur * Z_receiv_new, 1)
         first_likelihood_term += deltas * one_minus_deltas * torch.sum(Z_sender_new * Z_receiv_cur, 1)
         first_likelihood_term += deltas ** 2 * torch.sum(Z_sender_new * Z_receiv_new, 1)
 
         # This evaluates the value of the integral for the rate function, across all pairs of nodes and timeframes
-#######################
-#### First Version ####
-#######################        
-        # integral = 0.
-        # for k in list(range(self.n_change_points)[0:(self.n_change_points-1)]):
-        #     tau_cur = self.change_points[k]
-        #     tau_new = self.change_points[k + 1]
-        #     Z_cur = Z[nodes, :, k]
-        #     Z_new = Z[nodes, :, k + 1]
-        #     Sij00 = (torch.sum(torch.mm(Z_cur, Z_cur.t())) - torch.sum(Z_cur * Z_cur)) / 6
-        #     Sij11 = (torch.sum(torch.mm(Z_new, Z_new.t())) - torch.sum(Z_new * Z_new)) / 6
-        #     Sij01 = (torch.sum(torch.mm(Z_cur, Z_new.t())) - torch.sum(Z_cur * Z_new)) / 12
-        #     Sij10 = (torch.sum(torch.mm(Z_new, Z_cur.t())) - torch.sum(Z_new * Z_cur)) / 12
-        #     integral += (tau_new - tau_cur) * (Sij00 + Sij11 + Sij01 + Sij10)
-
-        # return prior - torch.sum(torch.log(first_likelihood_term)) + integral
-##########################
-#### New Version : MB ####
-##########################
+        #######################
+        #### First Version ####
+        #######################        
+                # integral = 0.
+                # for k in list(range(self.n_change_points)[0:(self.n_change_points-1)]):
+                #     tau_cur = self.change_points[k]
+                #     tau_new = self.change_points[k + 1]
+                #     Z_cur = Z[nodes, :, k]
+                #     Z_new = Z[nodes, :, k + 1]
+                #     Sij00 = (torch.sum(torch.mm(Z_cur, Z_cur.t())) - torch.sum(Z_cur * Z_cur)) / 6
+                #     Sij11 = (torch.sum(torch.mm(Z_new, Z_new.t())) - torch.sum(Z_new * Z_new)) / 6
+                #     Sij01 = (torch.sum(torch.mm(Z_cur, Z_new.t())) - torch.sum(Z_cur * Z_new)) / 12
+                #     Sij10 = (torch.sum(torch.mm(Z_new, Z_cur.t())) - torch.sum(Z_new * Z_cur)) / 12
+                #     integral += (tau_new - tau_cur) * (Sij00 + Sij11 + Sij01 + Sij10)
+        
+                # return prior - torch.sum(torch.log(first_likelihood_term)) + integral
+        ##########################
+        #### New Version : MB ####
+        ##########################
         integral = 0.
         senders = torch.unique(senders)
         receivers = torch.arange(fs)
@@ -148,7 +149,7 @@ class ModelCLPM(torch.nn.Module):
         """
         bs = len(nodes)
         fs = len(dataset)
-        print("Batch size: "+str(bs)+" Full size: "+str(fs))
+        # print("Batch size: "+str(bs)+" Full size: "+str(fs))
         timestamps, senders, receivers = dataset[nodes]
         n_entries = len(timestamps)
         if n_entries <= 1:
@@ -156,7 +157,7 @@ class ModelCLPM(torch.nn.Module):
 
         # Prior contribution, this roughly corresponds to a gaussian prior on the initial positions and increments - you can think of this as a penalisation term
         prior = 0
-        prior += self.penalty * torch.sum(self.Z[nodes, :, 0] ** 2)
+        # prior += self.penalty * torch.sum(self.Z[nodes, :, 0] ** 2)
         prior += self.penalty * torch.sum((self.Z[nodes, :, 1:self.n_change_points] - self.Z[nodes, :, 0:(self.n_change_points - 1)]) ** 2)
 
         # This evaluates the poisson logrates at the timestamps when each of the interactions happen
@@ -167,49 +168,49 @@ class ModelCLPM(torch.nn.Module):
         Z_sender_new = self.Z[senders, :, kappa + 1].squeeze()
         Z_receiv_cur = self.Z[receivers, :, kappa].squeeze()
         Z_receiv_new = self.Z[receivers, :, kappa + 1].squeeze()
-        first_likelihood_term = torch.zeros(n_entries, dtype=torch.float64)
+        first_likelihood_term = torch.zeros(n_entries, dtype=torch.float64, device=self.device)
         first_likelihood_term += one_minus_deltas ** 2 * (2 * torch.sum(Z_sender_cur * Z_receiv_cur, 1) - torch.sum(Z_sender_cur * Z_sender_cur, 1) - torch.sum(Z_receiv_cur * Z_receiv_cur, 1))
         first_likelihood_term += 2 * deltas * one_minus_deltas * (
                     torch.sum(Z_sender_cur * Z_receiv_new, 1) + torch.sum(Z_sender_new * Z_receiv_cur, 1) - torch.sum(Z_sender_cur * Z_sender_new, 1) - torch.sum(Z_receiv_cur * Z_receiv_new, 1))
         first_likelihood_term += deltas ** 2 * (2 * torch.sum(Z_sender_new * Z_receiv_new, 1) - torch.sum(Z_sender_new * Z_sender_new, 1) - torch.sum(Z_receiv_new * Z_receiv_new, 1))
         #print("first ll term: ",torch.sum(first_likelihood_term))
         
-#########################################
-##############  First version ###########
-#########################################
-        # Integral of the rate function
-        # integral = 0.
-
-        # for k in list(range(self.n_change_points)[0:(self.n_change_points - 1)]):
-        #     tau_cur = self.change_points[k]
-        #     tau_new = self.change_points[k + 1]
-        #     Z_cur = self.Z[nodes, :, k]
-        #     Z_new = self.Z[nodes, :, k + 1]
-        #     tZ1 = torch.sum(Z_cur ** 2, 1)
-        #     tZ2 = tZ1.expand(tZ1.shape[0], tZ1.shape[0])
-        #     tZ1 = tZ2.transpose(0, 1)
-        #     D = tZ1 + tZ2 - 2 * torch.mm(Z_cur, Z_cur.transpose(0, 1))  # its element (i,j) is || z_i - z_j ||_2^2
-        #     N = len(D)
-        #     D_vec = D[torch.triu(torch.ones(N, N), 1) == 1]
-        #     DZ = Z_new - Z_cur  # This is \Delta
-        #     tDZ1 = torch.sum(DZ ** 2, 1)
-        #     tDZ2 = tDZ1.expand(tDZ1.shape[0], tDZ1.shape[0])
-        #     tDZ1 = tDZ2.transpose(0, 1)
-        #     S = tDZ1 + tDZ2 - 2 * torch.mm(DZ, DZ.transpose(0, 1))  # its element  (i,j) is || \Delta_i - \Delta_j ||_2^2
-        #     S_vec = S[torch.triu(torch.ones(N, N), 1) == 1]
-        #     tA = torch.sum((DZ * Z_cur), 1)
-        #     tB = tA.expand(tA.shape[0], tA.shape[0])
-        #     tA = tB.transpose(0, 1)
-        #     C = torch.mm(DZ, Z_cur.transpose(0, 1)) + torch.mm(Z_cur, DZ.transpose(0, 1)) - tA - tB
-        #     C_vec = C[torch.triu(torch.ones(N, N), 1) == 1]
-        #     mu = (1 / S_vec) * (C_vec)
-        #     sigma = torch.sqrt(1 / (2 * S_vec))
-        #     S = torch.exp(-(D_vec - S_vec * (mu ** 2))) * sigma * (RV.cdf((1 - mu) / sigma) - RV.cdf((0 - mu) / sigma)) * (tau_new - tau_cur)
-        #     integral += S.sum()
-            
-###############################################
-##############  Second version (MB) ###########
-###############################################
+        #########################################
+        ##############  First version ###########
+        #########################################
+                # Integral of the rate function
+                # integral = 0.
+        
+                # for k in list(range(self.n_change_points)[0:(self.n_change_points - 1)]):
+                #     tau_cur = self.change_points[k]
+                #     tau_new = self.change_points[k + 1]
+                #     Z_cur = self.Z[nodes, :, k]
+                #     Z_new = self.Z[nodes, :, k + 1]
+                #     tZ1 = torch.sum(Z_cur ** 2, 1)
+                #     tZ2 = tZ1.expand(tZ1.shape[0], tZ1.shape[0])
+                #     tZ1 = tZ2.transpose(0, 1)
+                #     D = tZ1 + tZ2 - 2 * torch.mm(Z_cur, Z_cur.transpose(0, 1))  # its element (i,j) is || z_i - z_j ||_2^2
+                #     N = len(D)
+                #     D_vec = D[torch.triu(torch.ones(N, N), 1) == 1]
+                #     DZ = Z_new - Z_cur  # This is \Delta
+                #     tDZ1 = torch.sum(DZ ** 2, 1)
+                #     tDZ2 = tDZ1.expand(tDZ1.shape[0], tDZ1.shape[0])
+                #     tDZ1 = tDZ2.transpose(0, 1)
+                #     S = tDZ1 + tDZ2 - 2 * torch.mm(DZ, DZ.transpose(0, 1))  # its element  (i,j) is || \Delta_i - \Delta_j ||_2^2
+                #     S_vec = S[torch.triu(torch.ones(N, N), 1) == 1]
+                #     tA = torch.sum((DZ * Z_cur), 1)
+                #     tB = tA.expand(tA.shape[0], tA.shape[0])
+                #     tA = tB.transpose(0, 1)
+                #     C = torch.mm(DZ, Z_cur.transpose(0, 1)) + torch.mm(Z_cur, DZ.transpose(0, 1)) - tA - tB
+                #     C_vec = C[torch.triu(torch.ones(N, N), 1) == 1]
+                #     mu = (1 / S_vec) * (C_vec)
+                #     sigma = torch.sqrt(1 / (2 * S_vec))
+                #     S = torch.exp(-(D_vec - S_vec * (mu ** 2))) * sigma * (RV.cdf((1 - mu) / sigma) - RV.cdf((0 - mu) / sigma)) * (tau_new - tau_cur)
+                #     integral += S.sum()
+                    
+        ###############################################
+        ##############  Second version (MB) ###########
+        ###############################################
         # Integral of the rate function
         integral = 0.
         
@@ -266,19 +267,19 @@ class ModelCLPM(torch.nn.Module):
             S = torch.exp(-(D_vec - S_vec * (mu ** 2))) * sigma * (RV.cdf((1 - mu) / sigma) - RV.cdf((0 - mu) / sigma)) * (tau_new - tau_cur)
             integral += .5*(S.sum()) # - bs*(tau_new - tau_cur)) # il secondo termine è per togliere i self-loops
             
-############################
-############################     
+        ############################
+        ############################     
         #print("test S: ", S_vec[S_vec<0.])       
         #print("integral value: ", integral)   
-        return fs/bs*(prior - self.beta * n_entries - torch.sum(first_likelihood_term) + torch.sqrt(2 * torch.tensor([math.pi], dtype=torch.float64)) * torch.exp(self.beta) * integral)
+        return fs/bs*(prior - self.beta * n_entries - torch.sum(first_likelihood_term) + torch.sqrt(2 * torch.tensor([math.pi], dtype=torch.float64, device = self.device)) * torch.exp(self.beta) * integral)
 
-    def fit(self, dataset, n_epochs, batch_size, lr_z=1e-3, lr_beta=1e-7):
+    def fit(self, dataset, n_epochs, batch_size, lr_z=1e-3, lr_beta=1e-7, threshold = None):
         """
         Runs the optimizer
         """
         # Batch size management
         self.batch_size = batch_size
-        if self.batch_size < 5:
+        if self.batch_size < 1:
             quit('ERROR: batch_size is too small')
         if self.batch_size > len(dataset):
             quit('ERROR: batch_size cannot be larger than the number of nodes')
@@ -295,7 +296,7 @@ class ModelCLPM(torch.nn.Module):
         self.n_epochs = n_epochs
         self.lr_z = lr_z
         self.lr_beta = lr_beta
-        optimizer = torch.optim.SGD(self.parameters(), lr=self.lr_z)
+        optimizer = torch.optim.SGD([{'params': self.Z}], lr=self.lr_z)
         if self.model_type == 'distance':
             optimizer = torch.optim.SGD([{'params': self.Z}, {'params': self.beta, 'lr': lr_beta}], lr=self.lr_z)
         # for param_group in optimizer.param_groups:
@@ -318,11 +319,18 @@ class ModelCLPM(torch.nn.Module):
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                self.loss_values[epoch] = loss.item()
-                if self.verbose is True:
-                    print(f'Elapsed seconds: {time.time()-start_time:.2f} \t\t Epoch: {epoch+1:>d} \t\t Batch: {current_index+batch:>d}/{len(dataset):>d} \t\t Loss: {self.loss_values[epoch]:>.4f}')
+                self.loss_values[epoch] += 1/len(batch_sizes) * loss.item()
                 current_index += batch
+                if self.verbose is True:
+                    print(f'Elapsed seconds: {time.time()-start_time:.2f} \t\t Epoch: {epoch+1:>d} \t\t Batch: {current_index:>d}/{len(dataset):>d} \t\t Loss: {self.loss_values[epoch]:>.4f}')
+            if threshold is not None:
+                if self.loss_values[epoch] < threshold:
+                    # self.elapsed_secs = time.time()-start_time
+                    # self.last_epoch = epoch
+                    break
             # self.loss_values_debug[epoch] = self.loss(dataset, nodes_ordering).item()  # DEBUG
+        self.elapsed_secs = time.time()-start_time
+        self.last_epoch = epoch    
         print('\nOptimization has now finished.')
         print(f'\nThe optimal objective function value (based on the full dataset) is {self.loss(dataset, list(range(0,len(dataset)))).item():.4f}')
 
@@ -358,12 +366,15 @@ class ModelCLPM(torch.nn.Module):
                     Z_long_format[index, 0] = i + 1
                     Z_long_format[index, 1] = d + 1
                     Z_long_format[index, 2] = t + 1
-                    Z_long_format[index, 3] = self.Z[i, d, t]
+                    Z_long_format[index, 3] = self.Z[i, d, t].cpu()
                     index += 1
-
+        
         pd.DataFrame(Z_long_format).to_csv(path + 'output_' + self.model_type + '/positions.csv', index=False, header=False)
         pd.DataFrame(self.loss_values).to_csv(path + 'output_' + self.model_type + '/loss_function_values.csv', index=False, header=False)
         if self.model_type == 'distance':
-            pd.DataFrame(self.beta.detach().numpy()).to_csv(path + 'output_' + self.model_type + '/beta.csv', index=False, header=False)
+            pd.DataFrame(self.beta.cpu().detach().numpy().reshape(-1,1)).to_csv(path + 'output_' + self.model_type + '/beta.csv', index=False, header=False)
 
         np.savetxt(path + "output_" + self.model_type + "/changepoints.csv", self.change_points.cpu(), delimiter=',')
+        np.savetxt(path + "output_" + self.model_type + "/elapsed_secs.csv", np.array(self.elapsed_secs).reshape(1,), delimiter = ",")
+        np.savetxt(path + "output_" + self.model_type + "/n_epochs.csv", np.array(self.last_epoch).reshape(1,), delimiter = ",")
+

@@ -6,18 +6,19 @@ from torch.utils.data import Dataset
 
 
 class NetworkCLPM(Dataset):
-    def __init__(self, edge_list, verbose=True):
-        self.timestamps = torch.tensor(edge_list.iloc[:, 0:1].values, dtype=torch.float64)
+    def __init__(self, edge_list, verbose=True, device = 'cpu'):
+        self.device = device
+        self.timestamps = torch.tensor(edge_list.iloc[:, 0:1].values, dtype=torch.float64, device = device)
         # networks are undirected but we use names such as senders and receivers to easily identify the columns of the edge list
-        self.senders = torch.tensor(edge_list.iloc[:, 1:2].values, dtype=torch.long)
-        self.receivers = torch.tensor(edge_list.iloc[:, 2:3].values, dtype=torch.long)
+        self.senders = torch.tensor(edge_list.iloc[:, 1:2].values, dtype=torch.long, device = device)
+        self.receivers = torch.tensor(edge_list.iloc[:, 2:3].values, dtype=torch.long, device = device)
         self.n_entries = len(self.timestamps)
         self.n_nodes = torch.max(self.senders).item() + 1
         if torch.max(self.receivers).item() + 1 > self.n_nodes:
             self.n_nodes = torch.max(self.receivers).item() + 1
 
         # we create a matrix such that for every pair i and j we know how many entries in the edge list refer to an interaction between i and j
-        self.n_edges_per_pair = torch.zeros(self.n_nodes, self.n_nodes, dtype=torch.long)
+        self.n_edges_per_pair = torch.zeros(self.n_nodes, self.n_nodes, dtype=torch.long, device = device)
         for edge in range(self.n_entries):
             self.n_edges_per_pair[self.senders[edge], self.receivers[edge]] += 1
             self.n_edges_per_pair[self.receivers[edge], self.senders[edge]] += 1
@@ -26,8 +27,8 @@ class NetworkCLPM(Dataset):
         self.most_interactions = torch.max(self.n_edges_per_pair).item() + 1
 
         # create a cube which indicates, for every pair (i, j), the row indices in the edge list for all the interactions between i and j
-        self.adj_box = torch.zeros((self.n_nodes, self.n_nodes, self.most_interactions), dtype=torch.long)
-        n_edges_per_pair_temp = torch.zeros(self.n_nodes, self.n_nodes, dtype=torch.long)
+        self.adj_box = torch.zeros((self.n_nodes, self.n_nodes, self.most_interactions), dtype=torch.long, device = device)
+        n_edges_per_pair_temp = torch.zeros(self.n_nodes, self.n_nodes, dtype=torch.long, device = device)
         for edge in range(self.n_entries):
             sender_index = self.senders[edge]
             receiver_index = self.receivers[edge]

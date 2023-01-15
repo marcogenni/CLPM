@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-
 import numpy as np
 import pandas as pd
 import torch
@@ -8,45 +7,36 @@ import sys
 sys.path.append('../')
 
 from CLPM_dataset import *
-from CLPM_model import *
-from CLPM_plot import *
+from CLPM import *
 
 np.random.seed(12345)
 torch.manual_seed(54321)
 
+plots_only = False
 verbose = True
 
-edge_list = pd.read_csv('edgelist.csv')
-network = NetworkCLPM(edge_list, verbose)
+if torch.cuda.is_available(): device = 'cuda'
+else: device = 'cpu'
+
+edge_list = pd.read_csv('edgelist.csv', header=None)
+network = NetworkCLPM(edge_list, verbose, device='cpu')
 
 n_change_points = 10
 model_type = 'distance'
-penalty = 10.
+penalty = 300.
 model = ModelCLPM(network, n_change_points, model_type, penalty, verbose)
 
-n_epochs = 5000
+n_epochs = 2500
 batch_size = 20
-lr_z = 1e-4
-lr_beta = 1e-7
-model.fit(network, n_epochs, batch_size, lr_z, lr_beta)
+lr_z = 5e-6
+lr_beta = 5e-6
 
-model.export()
+if plots_only is False:
+    model.fit(network, n_epochs, batch_size, lr_z, lr_beta)
+    model.export_fit()
+else: model.import_fit()
 
-period = 2
-frames_btw = 60
-ClpmPlot(model_type=model_type,
-         dpi=250,
-         period=period,
-         size=(1200, 900),
-         is_color=True,
-         formato='mp4v',
-         frames_btw=frames_btw,
-         nodes_to_track=[None],
-         sub_graph=False,
-         type_of='friendship',
-         n_hubs=2,
-         n_sub_nodes=100,
-         start_date=None,
-         end_date=None)
-
-
+plot_opt = {"period": 1,
+            "frames_btw": 30}
+model.def_plot_pars(plot_opt)
+model.create_animation(True)

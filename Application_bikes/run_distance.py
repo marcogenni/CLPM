@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-
 import numpy as np
 import pandas as pd
 import torch
@@ -8,46 +7,48 @@ import sys
 sys.path.append('../')
 
 from CLPM_dataset import *
-from CLPM_model import *
-from CLPM_plot import *
+from CLPM import *
 
 np.random.seed(12345)
 torch.manual_seed(54321)
 
+plots_only = False
 verbose = True
 
+if torch.cuda.is_available(): device = 'cuda'
+else: device = 'cpu'
+
 edge_list = pd.read_csv('edgelist.csv')
-network = NetworkCLPM(edge_list, verbose)
+network = NetworkCLPM(edge_list, verbose, device='cpu')
 
 n_change_points = 96
 model_type = 'distance'
-penalty = 30.
+penalty = 10.
 model = ModelCLPM(network, n_change_points, model_type, penalty, verbose)
 
-n_epochs = 500
-batch_size = 780
+n_epochs = 300
+batch_size = 78
 lr_z = 1e-4
-lr_beta = 1e-6
-model.fit(network, n_epochs, batch_size, lr_z, lr_beta)
+lr_beta = 1e-7
 
-model.export()
+if plots_only is False:
+    model.fit(network, n_epochs, batch_size, lr_z, lr_beta)
+    model.export_fit()
+else: model.import_fit()
 
-period = 1
-frames_btw = 40
-ClpmPlot(model_type=model_type,
-         dpi=250,
-         period=period,
-         size=(1200, 900),
-         is_color=True,
-         formato='mp4v',
-         frames_btw=frames_btw,
-         nodes_to_track=[0, 22, 50],
-         sub_graph=True,
-         type_of='degree',
-         n_hubs=2,
-         n_sub_nodes=60,
-         start_date=[2015, 9, 6, 0, 0],
-         end_date=[2015, 9, 6, 23, 59],
-         time_format='%Y/%m/%d %H:%M:%S')
+model.reduce_network(edgelist=edge_list, n_hubs=2, type_of='degree', n_sub_nodes=60)
+
+frames_btw = 10
+cluster_n_groups = 5
+plot_opt = {"period": 0.5,
+            "frames_btw": frames_btw,
+            "nodes_to_track": [0, 22, 50],
+            "time_format": '%H:%M:%S',
+            "start_date": [2015, 9, 6, 0, 0],
+            "end_date": [2015, 9, 6, 23, 59]}
+model.def_plot_pars(plot_opt)
+model.create_animation(True)
+
+model.clusteredness_index([0.05, 0.2], 0, 24, frames_btw)
 
 
